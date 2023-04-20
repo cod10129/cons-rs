@@ -56,8 +56,21 @@ impl<T> List<T> {
     /// # Panics
     ///
     /// Panics if the list is Nil.
-    pub fn iter<'a>(&'a self) -> ListIterator<'a, T> {
-        ListIterator::new(self).unwrap()
+    pub fn iter(&self) -> ListIterator<'_, T> {
+        self.iter_checked()
+            .expect("List should not be Nil.")
+    }
+
+    /// Returns an iterator over the List.
+    ///
+    /// It yields all items in the List, start to end.
+    ///
+    /// # Errors
+    ///
+    /// An error is returned if the List is Nil.
+    pub fn iter_checked(&self) -> Result<ListIterator<'_, T>, ()> {
+        ListIterator::new(self)
+            .ok_or(())
     }
 }
 
@@ -112,5 +125,22 @@ mod tests {
         let list: List<i32> = Nil;
         assert!(list.is_nil());
         assert!(!list.is_cons());
+    }
+
+    #[test]
+    fn iter() {
+        let list = Cons(2, Box::new(Cons(4, Box::new(Nil))));
+        let mut iterator = list.iter();
+        assert_eq!(iterator.next(), Some(&2));
+        assert_eq!(iterator.next(), Some(&4));
+        assert_eq!(iterator.next(), None);
+    }
+
+    #[test]
+    fn iter_loop() {
+        let list = Cons(0, Box::new(Cons(2, Box::new(Cons(4, Box::new(Nil))))));
+        for (i, val) in list.iter().enumerate() {
+            assert_eq!(val, &(i * 2));
+        }
     }
 }
