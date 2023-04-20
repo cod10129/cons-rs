@@ -74,6 +74,15 @@ impl<T> List<T> {
     }
 }
 
+impl<'a, T> IntoIterator for &'a List<T> {
+    type Item = &'a T;
+    type IntoIter = ListIterator<'a, T>;
+
+    fn into_iter(self) -> ListIterator<'a, T> {
+        self.iter()
+    }
+}
+
 /// An iterator over a List<T>.
 /// 
 /// It is created by the [`iter`] method on [`List<T>`].
@@ -140,7 +149,17 @@ mod tests {
     fn iter_loop() {
         let list = Cons(0, Box::new(Cons(2, Box::new(Cons(4, Box::new(Nil))))));
         for (i, val) in list.iter().enumerate() {
-            assert_eq!(val, &(i * 2));
+            assert_eq!(*val, i * 2);
+        }
+    }
+
+    #[test]
+    fn for_loop() {
+        let list = Cons(0, Box::new(Cons(1, Box::new(Cons(2, Box::new(Nil))))));
+        let mut i = 0;
+        for val in &list {
+            assert_eq!(*val, i);
+            i += 1;
         }
     }
 }
