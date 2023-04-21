@@ -62,8 +62,6 @@ impl<T> List<T> {
             panic!("List should not be Nil.")
         }
     }
-
-    pub fn unwrap_or(self)
 }
 
 impl<T: Clone> IntoIterator for List<T> {
