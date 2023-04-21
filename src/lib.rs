@@ -10,7 +10,7 @@ pub use List::{Cons, Nil};
 /// See [the module level documentation](self) for more.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum List<T> {
-    /// A value of type `T`, and a Box containing another list.
+    /// A value of type `T`, and a Box containing another [`List`].
     Cons(T, Box<List<T>>),
     /// Nothing.
     #[default]
@@ -139,6 +139,24 @@ impl<T: Clone> IntoIterator for List<T> {
     }
 }
 
+// if anyone reads this and knows how to make it better,
+// please tell me. raise an issue on the repo
+impl<T> FromIterator<T> for List<T> {
+    fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
+        use std::collections::VecDeque;
+        let mut container = VecDeque::new();
+        // have to use a loop to make it List<T> instead of T
+        for item in iter {
+            container.push_back(Cons(item, Box::new(Nil)));
+        }
+        let mut list: List<T> = Nil;
+        while let Some(Cons(val, _)) = container.pop_back() {
+            list = Cons(val, Box::new(list));
+        }
+        list
+    }
+}
+
 /// An iterator over a List<T>.
 /// 
 /// It is created by the [`into_iter`] method on [`List<T>`].
@@ -238,5 +256,22 @@ mod tests {
             assert_eq!(val, i);
             i += 1;
         }
+    }
+
+    #[test]
+    fn from_iter() {
+        let list: List<_> = List::from_iter(1..=5);
+
+        assert_eq!(list, 
+                  Cons(1, Box::new(
+                      Cons(2, Box::new(
+                          Cons(3, Box::new(
+                              Cons(4, Box::new(
+                                  Cons(5, Box::new(Nil))
+                              ))
+                          ))
+                      ))
+                  )));
+                // that was 11 close-parens in a row
     }
 }
