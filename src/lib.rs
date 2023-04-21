@@ -49,8 +49,8 @@ impl<T> List<T> {
         !self.is_cons()
     }
 
-    /// Gets the value and next List,
-    /// by consuming a given List.
+    /// Gets the value and next `List`,
+    /// by consuming self.
     ///
     /// # Panics
     ///
@@ -62,6 +62,8 @@ impl<T> List<T> {
             panic!("List should not be Nil.")
         }
     }
+
+    pub fn unwrap_or(self)
 }
 
 impl<T: Clone> IntoIterator for List<T> {
@@ -77,7 +79,7 @@ impl<T: Clone> IntoIterator for List<T> {
 /// 
 /// It is created by the [`into_iter`] method on [`List<T>`].
 ///
-/// [`iter`]: List::iter
+/// [`into_iter`]: List::into_iter
 pub struct ListIterator<T> {
     next: Box<List<T>>
 }
