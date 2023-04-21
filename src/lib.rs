@@ -8,7 +8,7 @@ pub use List::{Cons, Nil};
 
 /// An enum that represents a `Cons` list.
 /// See [the module level documentation](self) for more.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum List<T> {
     /// A value of type `T`, and a Box containing another list.
     Cons(T, Box<List<T>>),
@@ -49,71 +49,57 @@ impl<T> List<T> {
         !self.is_cons()
     }
 
-    /// Returns an iterator over the List.
-    ///
-    /// It yields all items in the List, start to end.
+    /// Gets the value and next List,
+    /// by consuming a given List.
     ///
     /// # Panics
     ///
-    /// Panics if the list is Nil.
-    pub fn iter(&self) -> ListIterator<'_, T> {
-        self.iter_checked()
-            .expect("List should not be Nil.")
-    }
-
-    /// Returns an iterator over the List.
-    ///
-    /// It yields all items in the List, start to end.
-    ///
-    /// # Errors
-    ///
-    /// An error is returned if the List is Nil.
-    pub fn iter_checked(&self) -> Result<ListIterator<'_, T>, ()> {
-        ListIterator::new(self)
-            .ok_or(())
+    /// Panics if self is Nil.
+    pub fn unwrap(self) -> (T, List<T>) {
+        if let Cons(val, next) = self {
+            (val, *next)
+        } else {
+            panic!("List should not be Nil.")
+        }
     }
 }
 
-impl<'a, T> IntoIterator for &'a List<T> {
-    type Item = &'a T;
-    type IntoIter = ListIterator<'a, T>;
+impl<T: Clone> IntoIterator for List<T> {
+    type Item = T;
+    type IntoIter = ListIterator<T>;
 
-    fn into_iter(self) -> ListIterator<'a, T> {
-        self.iter()
+    fn into_iter(self) -> Self::IntoIter {
+        ListIterator::new(self)
     }
 }
 
 /// An iterator over a List<T>.
 /// 
-/// It is created by the [`iter`] method on [`List<T>`].
+/// It is created by the [`into_iter`] method on [`List<T>`].
 ///
 /// [`iter`]: List::iter
-pub struct ListIterator<'a, T> {
-    next: Option<&'a List<T>>
+pub struct ListIterator<T> {
+    next: Box<List<T>>
 }
 
-impl<'a, T> ListIterator<'a, T> {
-    fn new(list: &'a List<T>) -> Option<ListIterator<'a, T>> {
-        if list.is_cons() {
-            Some(ListIterator {
-                next: Some(list)
-            })
-        } else {
-            None
+impl<T> ListIterator<T> {
+    fn new(list: List<T>) -> ListIterator<T> {
+        ListIterator {
+            next: Box::new(list)
         }
     }
 }
 
-impl<'a, T> Iterator for ListIterator<'a, T> {
-    type Item = &'a T;
+impl<T: Clone> Iterator for ListIterator<T> {
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.next {
-            Some(Cons(val, next)) => {
-                self.next = Some(next);
-                Some(val)
-            },
-            _ => None
+        if let Cons(val, next) = &*self.next {
+            let tmp = val.clone();
+            self.next = next.clone();
+            Some(tmp)
+        } else {
+            None
         }
     }
 }
@@ -139,17 +125,17 @@ mod tests {
     #[test]
     fn iter() {
         let list = Cons(2, Box::new(Cons(4, Box::new(Nil))));
-        let mut iterator = list.iter();
-        assert_eq!(iterator.next(), Some(&2));
-        assert_eq!(iterator.next(), Some(&4));
+        let mut iterator = list.into_iter();
+        assert_eq!(iterator.next(), Some(2));
+        assert_eq!(iterator.next(), Some(4));
         assert_eq!(iterator.next(), None);
     }
 
     #[test]
     fn iter_loop() {
         let list = Cons(0, Box::new(Cons(2, Box::new(Cons(4, Box::new(Nil))))));
-        for (i, val) in list.iter().enumerate() {
-            assert_eq!(*val, i * 2);
+        for (i, val) in list.into_iter().enumerate() {
+            assert_eq!(val, i * 2);
         }
     }
 
@@ -157,8 +143,8 @@ mod tests {
     fn for_loop() {
         let list = Cons(0, Box::new(Cons(1, Box::new(Cons(2, Box::new(Nil))))));
         let mut i = 0;
-        for val in &list {
-            assert_eq!(*val, i);
+        for val in list {
+            assert_eq!(val, i);
             i += 1;
         }
     }
