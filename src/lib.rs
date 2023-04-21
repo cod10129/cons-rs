@@ -8,11 +8,12 @@ pub use List::{Cons, Nil};
 
 /// An enum that represents a `Cons` list.
 /// See [the module level documentation](self) for more.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum List<T> {
     /// A value of type `T`, and a Box containing another list.
     Cons(T, Box<List<T>>),
     /// Nothing.
+    #[default]
     Nil
 }
 
@@ -21,8 +22,8 @@ impl<T> List<T> {
     ///
     /// # Examples
     /// ```
-    /// use cons_rs::{List, Cons, Nil};
-    ///
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
     /// let x: List<i32> = Cons(5, Box::new(Nil));
     /// assert_eq!(x.is_cons(), true);
     ///
@@ -37,8 +38,8 @@ impl<T> List<T> {
     ///
     /// # Examples:
     /// ```
-    /// use cons_rs::{List, Cons, Nil};
-    ///
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
     /// let x: List<i32> = Cons(5, Box::new(Nil));
     /// assert_eq!(x.is_nil(), false);
     ///
@@ -49,17 +50,82 @@ impl<T> List<T> {
         !self.is_cons()
     }
 
-    /// Gets the value and next `List`,
-    /// by consuming self.
+    /// Returns the [`Cons`] value and next [`List`], consuming `self`.
+    ///
+    /// Usage of this function is discouraged, as it may panic.
+    /// Instead, prefer to use pattern matching, [`unwrap_or`] or [`unwrap_or_default`].
     ///
     /// # Panics
     ///
-    /// Panics if self is Nil.
+    /// Panics if `self` is [`Nil`].
+    ///
+    /// # Examples
+    /// ```
+    /// # use cons_rs::{Cons, Nil};
+    /// #
+    /// let x = Cons(5, Box::new(Nil));
+    /// assert_eq!(x.unwrap(), (5, Nil));
+    /// ```
+    ///
+    /// ```should_panic
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x: List<i32> = Nil;
+    /// assert_eq!(x.unwrap(), (5, Nil)); // fails
+    /// ```
+    ///
+    /// [`unwrap_or`]: List::unwrap_or
+    /// [`unwrap_or_default`]: List::unwrap_or_default
     pub fn unwrap(self) -> (T, List<T>) {
-        if let Cons(val, next) = self {
-            (val, *next)
-        } else {
-            panic!("List should not be Nil.")
+        match self {
+            Cons(val, next) => (val, *next),
+            Nil => panic!("Called List::unwrap() on a Nil value.")
+        }
+    }
+
+    /// Returns the contained [`Cons`] value and [`List`],
+    /// or a provided default.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = Cons(5, Box::new(Nil));
+    /// assert_eq!(x.unwrap_or((6, Nil)), (5, Nil));
+    ///
+    /// let x: List<i32> = Nil;
+    /// assert_eq!(x.unwrap_or((6, Nil)), (6, Nil));
+    /// ```
+    pub fn unwrap_or(self, default: (T, List<T>)) -> (T, List<T>) {
+        match self {
+            Cons(val, next) => (val, *next),
+            Nil => default
+        }
+    }
+
+    /// Returns the contained [`Cons`] value and [`List`], or a default.
+    ///
+    /// Consumes `self`, and if `self` is [`Cons`], returns the contained
+    /// value and list, otherwise, returns the [default value] 
+    /// for T and [`Nil`].
+    ///
+    /// # Examples
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = Cons(3, Box::new(Nil));
+    /// assert_eq!(x.unwrap_or_default(), (3, Nil));
+    ///
+    /// let x: List<i32> = Nil;
+    /// assert_eq!(x.unwrap_or_default(), (0, Nil));
+    /// ```
+    ///
+    /// [default value]: Default::default
+    pub fn unwrap_or_default(self) -> (T, List<T>) where T: Default {
+        match self {
+            Cons(val, next) => (val, *next),
+            Nil => (Default::default(), Nil)
         }
     }
 }
@@ -122,6 +188,31 @@ mod tests {
         assert!(!list.is_cons());
     }
 
+    #[test]
+    fn unwrap() {
+        let x = Cons(2, Box::new(Nil));
+        assert_eq!(x.unwrap(), (2, Nil));
+    }
+
+    #[test]
+    #[should_panic]
+    fn unwrap_panic() {
+        let x: List<u32> = Nil;
+        x.unwrap(); // panics
+    }
+
+    #[test]
+    fn unwrap_or() {
+        let x: List<u32> = Nil;
+        assert_eq!(x.unwrap_or((3, Nil)), (3, Nil));
+    }
+
+    #[test]
+    fn unwrap_or_default() {
+        let x: List<u32> = Nil;
+        assert_eq!(x.unwrap_or_default(), (0, Nil));
+    }
+    
     #[test]
     fn iter() {
         let list = Cons(2, Box::new(Cons(4, Box::new(Nil))));
