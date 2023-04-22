@@ -18,6 +18,24 @@ pub enum List<T> {
 }
 
 impl<T> List<T> {
+    /// Returns a new [`Cons`] where `x` is the only value
+    /// in the [`List`].
+    ///
+    /// This is equivalent to `Cons(x, Box::new(Nil))`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = List::new_val(5);
+    /// assert_eq!(x, Cons(5, Box::new(Nil)));
+    /// ```
+    #[inline]
+    pub fn new_val(x: T) -> List<T> {
+        Cons(x, Box::new(Nil))
+    }
+
     /// Returns true if the List is a [`Cons`] value.
     ///
     /// # Examples
@@ -30,6 +48,7 @@ impl<T> List<T> {
     /// let x: List<i32> = Nil;
     /// assert_eq!(x.is_cons(), false);
     /// ```
+    #[inline]
     pub const fn is_cons(&self) -> bool {
         matches!(self, Cons(_, _))
     }
@@ -46,14 +65,17 @@ impl<T> List<T> {
     /// let x: List<i32> = Nil;
     /// assert_eq!(x.is_nil(), true);
     /// ```
+    #[inline]
     pub const fn is_nil(&self) -> bool {
         !self.is_cons()
     }
 
-    /// Returns the [`Cons`] value and next [`List`], consuming `self`.
+    /// Returns the [`Cons`] value and next [`List`], 
+    /// consuming `self`.
     ///
     /// Usage of this function is discouraged, as it may panic.
-    /// Instead, prefer to use pattern matching, [`unwrap_or`] or [`unwrap_or_default`].
+    /// Instead, prefer to use pattern matching, 
+    /// [`unwrap_or`] or [`unwrap_or_default`].
     ///
     /// # Panics
     ///
@@ -76,6 +98,7 @@ impl<T> List<T> {
     ///
     /// [`unwrap_or`]: List::unwrap_or
     /// [`unwrap_or_default`]: List::unwrap_or_default
+    #[inline]
     pub fn unwrap(self) -> (T, List<T>) {
         match self {
             Cons(val, next) => (val, *next),
@@ -97,6 +120,7 @@ impl<T> List<T> {
     /// let x: List<i32> = Nil;
     /// assert_eq!(x.unwrap_or((6, Nil)), (6, Nil));
     /// ```
+    #[inline]
     pub fn unwrap_or(self, default: (T, List<T>)) -> (T, List<T>) {
         match self {
             Cons(val, next) => (val, *next),
@@ -122,10 +146,36 @@ impl<T> List<T> {
     /// ```
     ///
     /// [default value]: Default::default
+    #[inline]
     pub fn unwrap_or_default(self) -> (T, List<T>) where T: Default {
         match self {
             Cons(val, next) => (val, *next),
             Nil => (Default::default(), Nil)
+        }
+    }
+
+    /// Maps `List<T>` to `List<U>` by applying a function to the contained value
+    /// (if [`Cons`], discarding the `next` value), or `Nil` (if self is [`Nil`]).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = Cons("Hello World".to_string(), Box::new(Nil));
+    /// let x_len = x.map(|s| s.len());
+    /// assert_eq!(x_len, Cons(11, Box::new(Nil)));
+    ///
+    /// let x: List<String> = Nil;
+    /// let x_len = x.map(|s| s.len());
+    /// assert_eq!(x_len, Nil);
+    /// ```
+    pub fn map<U, F>(self, f: F) -> List<U>
+    where F: FnOnce(T) -> U
+    {
+        match self {
+            Cons(val, _) => Cons(f(val), Box::new(Nil)),
+            Nil => Nil
         }
     }
 }
@@ -229,6 +279,19 @@ mod tests {
     fn unwrap_or_default() {
         let x: List<u32> = Nil;
         assert_eq!(x.unwrap_or_default(), (0, Nil));
+    }
+
+    #[test]
+    fn map() {
+        let x: List<String> = Cons(String::from("Hello"), Box::new(Nil));
+        assert_eq!(x.map(|s| s.len()), List::new_val(5));
+        assert_eq!(Nil.map(|s: String| s.len()), Nil);
+    }
+
+    #[test]
+    fn new_val() {
+        let x = List::new_val(8);
+        assert_eq!(x, Cons(8, Box::new(Nil)));
     }
     
     #[test]
