@@ -8,7 +8,7 @@ pub use List::{Cons, Nil};
 
 /// An enum that represents a `Cons` list.
 /// See [the module level documentation](self) for more.
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum List<T> {
     /// A value of type `T`, and a Box containing another [`List`].
     Cons(T, Box<List<T>>),
@@ -68,6 +68,29 @@ impl<T> List<T> {
     #[inline]
     pub const fn is_nil(&self) -> bool {
         !self.is_cons()
+    }
+
+    /// Converts from `&List<T>` to `List<&T>`. If `self` is [`Cons`],
+    /// `next` is always `Nil`. To preserve `next`, use [`as_ref`].
+    ///
+    /// [`as_ref`]: List::as_ref
+    pub fn val_as_ref(&self) -> List<&T> {
+        match *self {
+            Cons(ref val, _) => List::new_val(val),
+            Nil => Nil
+        }
+    }
+
+    /// Converts from `&List<T>` to `List<&T>`. If `self` is [`Cons`],
+    /// a `List` containing a reference to `val` and `next` is returned.
+    /// To ignore `next`, use [`val_as_ref`].
+    ///
+    /// [`val_as_ref`]: List::val_as_ref
+    pub fn as_ref(&self) -> List<&T> {
+        match *self {
+            Cons(ref val, ref next) => Cons(val, Box::new(next.val_as_ref())),
+            Nil => Nil
+        }
     }
 
     /// Returns the [`Cons`] value and next [`List`], 
@@ -322,6 +345,20 @@ mod tests {
         assert_eq!(Nil.map_next(f), Nil);
     }
 
+    #[test]
+    fn val_as_ref() {
+        let x = &List::new_val("Hello World".to_string());
+        assert_eq!(x.val_as_ref(), Cons(&"Hello World".to_string(), Box::new(Nil)));
+        // we still own x
+        println!("{x:?}");
+    }
+
+    #[test]
+    fn as_ref() {
+        let x = Cons("air".to_string(), Box::new(List::new_val("hello".to_string())));
+        assert_eq!(x.as_ref(), Cons(&"air".to_string(), Box::new(List::new_val(&"hello".to_string()))));
+    }
+    
     #[test]
     fn new_val() {
         let x = List::new_val(8);
