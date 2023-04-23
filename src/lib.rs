@@ -42,7 +42,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x: List<i32> = Cons(5, Box::new(Nil));
+    /// let x: List<i32> = List::new_val(5);
     /// assert_eq!(x.is_cons(), true);
     ///
     /// let x: List<i32> = Nil;
@@ -59,7 +59,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x: List<i32> = Cons(5, Box::new(Nil));
+    /// let x: List<i32> = List::new_val(5);
     /// assert_eq!(x.is_nil(), false);
     ///
     /// let x: List<i32> = Nil;
@@ -83,14 +83,14 @@ impl<T> List<T> {
     ///
     /// # Examples
     /// ```
-    /// # use cons_rs::{Cons, Nil};
+    /// # use cons_rs::{List, Nil};
     /// #
-    /// let x = Cons(5, Box::new(Nil));
+    /// let x = List::new_val(5);
     /// assert_eq!(x.unwrap(), (5, Nil));
     /// ```
     ///
     /// ```should_panic
-    /// # use cons_rs::{List, Cons, Nil};
+    /// # use cons_rs::{List, Nil};
     /// #
     /// let x: List<i32> = Nil;
     /// assert_eq!(x.unwrap(), (5, Nil)); // fails
@@ -114,7 +114,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = Cons(5, Box::new(Nil));
+    /// let x = List::new_val(5);
     /// assert_eq!(x.unwrap_or((6, Nil)), (5, Nil));
     ///
     /// let x: List<i32> = Nil;
@@ -138,7 +138,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = Cons(3, Box::new(Nil));
+    /// let x = List::new_val(3);
     /// assert_eq!(x.unwrap_or_default(), (3, Nil));
     ///
     /// let x: List<i32> = Nil;
@@ -154,17 +154,17 @@ impl<T> List<T> {
         }
     }
 
-    /// Maps `List<T>` to `List<U>` by applying a function to the contained value
-    /// (if [`Cons`], discarding the `next` value), or `Nil` (if self is [`Nil`]).
+    /// Maps [`List<T>`] to [`List<U>`] by applying a function to the contained value
+    /// (if [`Cons`], discarding the `next` value), or if [`Nil`], returns [`Nil`].
     ///
     /// # Examples
     ///
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = Cons("Hello World".to_string(), Box::new(Nil));
+    /// let x = List::new_val("Hello World".to_string());
     /// let x_len = x.map(|s| s.len());
-    /// assert_eq!(x_len, Cons(11, Box::new(Nil)));
+    /// assert_eq!(x_len, List::new_val(11));
     ///
     /// let x: List<String> = Nil;
     /// let x_len = x.map(|s| s.len());
@@ -175,6 +175,33 @@ impl<T> List<T> {
     {
         match self {
             Cons(val, _) => Cons(f(val), Box::new(Nil)),
+            Nil => Nil
+        }
+    }
+
+    /// Maps [`List<T>`] to [`List<U>`] by applying a function to the contained value
+    /// (if [`Cons`]), or returns [`Nil`] (if [`Nil`]).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let f = |x, list| (x + 1, list);
+    /// let x = List::new_val(5).map_next(f);
+    /// assert_eq!(x, Cons(6, Box::new(Nil)));
+    ///
+    /// let x: List<i32> = Nil;
+    /// assert_eq!(x.map_next(f), Nil);
+    /// ```
+    pub fn map_next<U, F>(self, f: F) -> List<U>
+    where F: FnOnce(T, List<T>) -> (U, List<U>)
+    {
+        match self {
+            Cons(val, next) => {
+                let result = f(val, *next);
+                Cons(result.0, Box::new(result.1))
+            },
             Nil => Nil
         }
     }
@@ -193,8 +220,7 @@ impl<T: Clone> IntoIterator for List<T> {
 // please tell me. raise an issue on the repo
 impl<T> FromIterator<T> for List<T> {
     fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
-        use std::collections::VecDeque;
-        let mut container = VecDeque::new();
+        let mut container = std::collections::VecDeque::new();
         // have to use a loop to make it List<T> instead of T
         for item in iter {
             container.push_back(Cons(item, Box::new(Nil)));
@@ -207,7 +233,7 @@ impl<T> FromIterator<T> for List<T> {
     }
 }
 
-/// An iterator over a List<T>.
+/// An iterator over a `List<T>`.
 /// 
 /// It is created by the [`into_iter`] method on [`List<T>`].
 ///
@@ -286,6 +312,14 @@ mod tests {
         let x: List<String> = Cons(String::from("Hello"), Box::new(Nil));
         assert_eq!(x.map(|s| s.len()), List::new_val(5));
         assert_eq!(Nil.map(|s: String| s.len()), Nil);
+    }
+
+    #[test]
+    fn map_next() {
+        let f = |x, y| (x + 1, y);
+        let x = Cons(2, Box::new(List::new_val(3)));
+        assert_eq!(x.map_next(f), Cons(3, Box::new(List::new_val(3))));
+        assert_eq!(Nil.map_next(f), Nil);
     }
 
     #[test]
