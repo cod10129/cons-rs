@@ -336,6 +336,86 @@ impl<T: Clone> Iterator for ListIterator<T> {
     }
 }
 
+impl<T> List<&T> {
+    /// Maps a `List<&T>` to a `List<T>` by copying the contents of the list.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = 3;
+    /// let list_x = List::new(&x);
+    /// assert_eq!(list_x, List::new(&3));
+    ///
+    /// let copy_x = list_x.copied();
+    /// assert_eq!(copy_x, List::new(3));
+    /// ```
+    pub fn copied(self) -> List<T> 
+    where T: Copy {
+        self.map(|x| *x)
+    }
+
+    /// Maps a `List<&T>` to a `List<T>` by cloning the contents of the list.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = 3;
+    /// let list_x = List::new(&x);
+    /// assert_eq!(list_x, List::new(&3));
+    ///
+    /// let clone_x = list_x.cloned();
+    /// assert_eq!(clone_x, List::new(3));
+    /// ```
+    pub fn cloned(self) -> List<T>
+    where T: Clone {
+        self.map(|x| x.clone())
+    }
+}
+
+impl<T> List<&mut T> {
+    /// Maps a `List<&mut T>` to a `List<T>` by copying the contents of the list.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let mut x = 3;
+    /// let list_x = List::new(&mut x);
+    /// assert_eq!(list_x, List::new(&mut 3));
+    ///
+    /// let copy_x = list_x.copied();
+    /// assert_eq!(copy_x, List::new(3));
+    /// ```
+    pub fn copied(self) -> List<T> 
+    where T: Copy {
+        self.map(|x| *x)
+    }
+
+    /// Maps a `List<&mut T>` to a `List<T>` by cloning the contents of the list.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let mut x = 3;
+    /// let list_x = List::new(&mut x);
+    /// assert_eq!(list_x, List::new(&mut 3));
+    ///
+    /// let clone_x = list_x.cloned();
+    /// assert_eq!(clone_x, List::new(3));
+    /// ```
+    pub fn cloned(self) -> List<T>
+    where T: Clone {
+        self.map(|x| x.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
