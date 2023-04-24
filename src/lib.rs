@@ -28,12 +28,25 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = List::new_val(5);
+    /// let x = List::new(5);
     /// assert_eq!(x, Cons(5, Box::new(Nil)));
     /// ```
     #[inline]
-    pub fn new_val(x: T) -> List<T> {
+    pub fn new(x: T) -> List<T> {
         Cons(x, Box::new(Nil))
+    }
+    
+    /// Returns a new [`Cons`] where `x` is the only value
+    /// in the [`List`].
+    ///
+    /// This is equivalent to `Cons(x, Box::new(Nil))`.
+    #[inline]
+    #[deprecated(
+        since = "0.3.1",
+        note = "Use new() instead."
+    )]
+    pub fn new_val(x: T) -> List<T> {
+        List::new(x)
     }
 
     /// Returns true if the List is a [`Cons`] value.
@@ -42,7 +55,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x: List<i32> = List::new_val(5);
+    /// let x: List<i32> = List::new(5);
     /// assert_eq!(x.is_cons(), true);
     ///
     /// let x: List<i32> = Nil;
@@ -59,7 +72,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x: List<i32> = List::new_val(5);
+    /// let x: List<i32> = List::new(5);
     /// assert_eq!(x.is_nil(), false);
     ///
     /// let x: List<i32> = Nil;
@@ -74,25 +87,61 @@ impl<T> List<T> {
     /// `next` is always `Nil`. To preserve `next`, use [`as_ref`].
     ///
     /// [`as_ref`]: List::as_ref
+    #[deprecated(
+        since = "0.3.1", 
+        note = "Any usage of val_as_ref can be replaced with as_ref."
+    )]
     pub fn val_as_ref(&self) -> List<&T> {
         match *self {
-            Cons(ref val, _) => List::new_val(val),
+            Cons(ref val, _) => List::new(val),
             Nil => Nil
         }
     }
 
-    /// Converts from `&List<T>` to `List<&T>`. If `self` is [`Cons`],
-    /// a `List` containing a reference to `val` and `next` is returned.
-    /// To ignore `next`, use [`val_as_ref`].
-    ///
-    /// [`val_as_ref`]: List::val_as_ref
+    /// Converts from `&List<T>` to `List<&T>`.
     pub fn as_ref(&self) -> List<&T> {
         match *self {
-            Cons(ref val, ref next) => Cons(val, Box::new(next.val_as_ref())),
+            Cons(ref val, ref next) => Cons(val, Box::new((**next).as_ref())),
             Nil => Nil
         }
     }
 
+    /// Converts from `&mut List<T>` to `List<&mut T>`.
+    pub fn as_mut(&mut self) -> List<&mut T> {
+        match *self {
+            Cons(ref mut val, ref mut next) => Cons(val, Box::new((**next).as_mut())),
+            Nil => Nil
+        }
+    }
+
+    /// Returns the [`Cons`] value and next [`List`], 
+    /// consuming `self`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `self` is [`Nil`].
+    ///
+    /// # Examples
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x = List::new(5);
+    /// assert_eq!(x.expect("foo"), (5, Nil));
+    /// ```
+    ///
+    /// ```should_panic
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let x: List<i32> = Nil;
+    /// x.expect("foo"); // panics with "foo"
+    /// ```
+    pub fn expect(self, msg: &str) -> (T, List<T>) {
+        match self {
+            Cons(val, next) => (val, *next),
+            Nil => panic!("{msg}")
+        }
+    }
+    
     /// Returns the [`Cons`] value and next [`List`], 
     /// consuming `self`.
     ///
@@ -108,7 +157,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Nil};
     /// #
-    /// let x = List::new_val(5);
+    /// let x = List::new(5);
     /// assert_eq!(x.unwrap(), (5, Nil));
     /// ```
     ///
@@ -137,7 +186,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = List::new_val(5);
+    /// let x = List::new(5);
     /// assert_eq!(x.unwrap_or((6, Nil)), (5, Nil));
     ///
     /// let x: List<i32> = Nil;
@@ -161,7 +210,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = List::new_val(3);
+    /// let x = List::new(3);
     /// assert_eq!(x.unwrap_or_default(), (3, Nil));
     ///
     /// let x: List<i32> = Nil;
@@ -185,7 +234,7 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let x = List::new_val("Hello World".to_string());
+    /// let x = List::new("Hello World".to_string());
     /// let x_len = x.map(|s| s.len());
     /// assert_eq!(x_len, List::new_val(11));
     ///
@@ -211,7 +260,7 @@ impl<T> List<T> {
     /// # use cons_rs::{List, Cons, Nil};
     /// #
     /// let f = |x, list| (x + 1, list);
-    /// let x = List::new_val(5).map_next(f);
+    /// let x = List::new(5).map_next(f);
     /// assert_eq!(x, Cons(6, Box::new(Nil)));
     ///
     /// let x: List<i32> = Nil;
@@ -306,13 +355,26 @@ mod tests {
     }
 
     #[test]
+    fn expect() {
+        let x = List::new(5);
+        assert_eq!(x.expect("foo"), (5, Nil));
+    }
+
+    #[test]
+    #[should_panic(expected = "foobar")]
+    fn expect_panic() {
+        let x: List<i32> = Nil;
+        x.expect("foobar");
+    }
+    
+    #[test]
     fn unwrap() {
         let x = Cons(2, Box::new(Nil));
         assert_eq!(x.unwrap(), (2, Nil));
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "List::unwrap")]
     fn unwrap_panic() {
         let x: List<u32> = Nil;
         x.unwrap(); // panics
@@ -333,36 +395,22 @@ mod tests {
     #[test]
     fn map() {
         let x: List<String> = Cons(String::from("Hello"), Box::new(Nil));
-        assert_eq!(x.map(|s| s.len()), List::new_val(5));
+        assert_eq!(x.map(|s| s.len()), List::new(5));
         assert_eq!(Nil.map(|s: String| s.len()), Nil);
     }
 
     #[test]
     fn map_next() {
         let f = |x, y| (x + 1, y);
-        let x = Cons(2, Box::new(List::new_val(3)));
-        assert_eq!(x.map_next(f), Cons(3, Box::new(List::new_val(3))));
+        let x = Cons(2, Box::new(List::new(3)));
+        assert_eq!(x.map_next(f), Cons(3, Box::new(List::new(3))));
         assert_eq!(Nil.map_next(f), Nil);
     }
 
     #[test]
-    fn val_as_ref() {
-        let x = &List::new_val("Hello World".to_string());
-        assert_eq!(x.val_as_ref(), Cons(&"Hello World".to_string(), Box::new(Nil)));
-        // we still own x
-        println!("{x:?}");
-    }
-
-    #[test]
     fn as_ref() {
-        let x = Cons("air".to_string(), Box::new(List::new_val("hello".to_string())));
-        assert_eq!(x.as_ref(), Cons(&"air".to_string(), Box::new(List::new_val(&"hello".to_string()))));
-    }
-    
-    #[test]
-    fn new_val() {
-        let x = List::new_val(8);
-        assert_eq!(x, Cons(8, Box::new(Nil)));
+        let x = Cons("air".to_string(), Box::new(List::new("hello".to_string())));
+        assert_eq!(x.as_ref(), Cons(&"air".to_string(), Box::new(List::new(&"hello".to_string()))));
     }
     
     #[test]
