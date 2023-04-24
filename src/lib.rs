@@ -513,14 +513,14 @@ mod tests {
 
     #[test]
     fn cl_mut() {
-        let v = 4;
+        let mut v = 4;
         let x = List::new(&mut v);
         assert_eq!(x.cloned(), List::new(v));
     }
 
     #[test]
     fn cp_mut() {
-        let v = 4;
+        let mut v = 4;
         let x = List::new(&mut v);
         assert_eq!(x.copied(), List::new(v));
     }
