@@ -492,6 +492,38 @@ mod tests {
         let x = Cons("air".to_string(), Box::new(List::new("hello".to_string())));
         assert_eq!(x.as_ref(), Cons(&"air".to_string(), Box::new(List::new(&"hello".to_string()))));
     }
+
+    #[test]
+    fn as_mut() {
+        let mut x = List::new(6);
+        assert_eq!(x.as_mut(), List::new(&mut 6));
+    }
+
+    #[test]
+    fn cl_ref() {
+        let x = List::new(&4);
+        assert_eq!(x.cloned(), List::new(4));
+    }
+
+    #[test]
+    fn cp_ref() {
+        let x = List::new(&4);
+        assert_eq!(x.copied(), List::new(4));
+    }
+
+    #[test]
+    fn cl_mut() {
+        let v = 4;
+        let x = List::new(&mut v);
+        assert_eq!(x.cloned(), List::new(v));
+    }
+
+    #[test]
+    fn cp_mut() {
+        let v = 4;
+        let x = List::new(&mut v);
+        assert_eq!(x.copied(), List::new(v));
+    }
     
     #[test]
     fn iter() {
