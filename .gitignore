@@ -1,5 +1,6 @@
-/target
-/Cargo.lock
+target/
+bencher/target/
+.idea/
+Cargo.lock
 .replit
 replit.nix
-.idea/
