@@ -17,6 +17,10 @@ pub enum List<T> {
     Nil
 }
 
+/// A type alias for the data contained by a [`Cons`],
+/// `(T, List<T>)`
+pub type ConsData<T> = (T, List<T>);
+
 impl<T> List<T> {
     /// Returns a new [`Cons`] where `x` is the only value
     /// in the [`List`].
@@ -135,7 +139,8 @@ impl<T> List<T> {
     /// let x: List<i32> = Nil;
     /// x.expect("foo"); // panics with "foo"
     /// ```
-    pub fn expect(self, msg: &str) -> (T, List<T>) {
+    #[inline]
+    pub fn expect(self, msg: &str) -> ConsData<T> {
         match self {
             Cons(val, next) => (val, *next),
             Nil => panic!("{msg}")
@@ -171,7 +176,7 @@ impl<T> List<T> {
     /// [`unwrap_or`]: List::unwrap_or
     /// [`unwrap_or_default`]: List::unwrap_or_default
     #[inline]
-    pub fn unwrap(self) -> (T, List<T>) {
+    pub fn unwrap(self) -> ConsData<T> {
         match self {
             Cons(val, next) => (val, *next),
             Nil => panic!("Called List::unwrap() on a Nil value.")
@@ -193,7 +198,7 @@ impl<T> List<T> {
     /// assert_eq!(x.unwrap_or((6, Nil)), (6, Nil));
     /// ```
     #[inline]
-    pub fn unwrap_or(self, default: (T, List<T>)) -> (T, List<T>) {
+    pub fn unwrap_or(self, default: ConsData<T>) -> ConsData<T> {
         match self {
             Cons(val, next) => (val, *next),
             Nil => default
@@ -219,7 +224,8 @@ impl<T> List<T> {
     ///
     /// [default value]: Default::default
     #[inline]
-    pub fn unwrap_or_default(self) -> (T, List<T>) where T: Default {
+    pub fn unwrap_or_default(self) -> ConsData<T> 
+    where T: Default {
         match self {
             Cons(val, next) => (val, *next),
             Nil => (Default::default(), Nil)
@@ -259,7 +265,8 @@ impl<T> List<T> {
     /// ```
     /// # use cons_rs::{List, Cons, Nil};
     /// #
-    /// let f = |x, list| (x + 1, list);
+    /// // you can unpack with a pattern
+    /// let f = |(x, list)| (x + 1, list);
     /// let x = List::new(5).map_next(f);
     /// assert_eq!(x, Cons(6, Box::new(Nil)));
     ///
@@ -267,11 +274,11 @@ impl<T> List<T> {
     /// assert_eq!(x.map_next(f), Nil);
     /// ```
     pub fn map_next<U, F>(self, f: F) -> List<U>
-    where F: FnOnce(T, List<T>) -> (U, List<U>)
+    where F: FnOnce(ConsData<T>) -> ConsData<U>
     {
         match self {
             Cons(val, next) => {
-                let result = f(val, *next);
+                let result = f((val, *next));
                 Cons(result.0, Box::new(result.1))
             },
             Nil => Nil
@@ -481,7 +488,7 @@ mod tests {
 
     #[test]
     fn map_next() {
-        let f = |x, y| (x + 1, y);
+        let f = |(x, y)| (x + 1, y);
         let x = Cons(2, Box::new(List::new(3)));
         assert_eq!(x.map_next(f), Cons(3, Box::new(List::new(3))));
         assert_eq!(Nil.map_next(f), Nil);

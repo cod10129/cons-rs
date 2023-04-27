@@ -4,4 +4,4 @@ bencher/target/
 Cargo.lock
 .replit
 replit.nix
-resetgitcache.sh
+bench.sh
