@@ -1,3 +1,4 @@
 #!/bin/bash
+echo "Benchmarking cons-rs..."
 cd bencher
-cargo bench
+cargo run --release
