@@ -1,9 +1,14 @@
 //! A list of nested pairs.
 //! 
-//! The type [`List`] represents a Cons-style structure.
+//! The type [`List`] represents an immutable singly linked list.
 //! Every [`List`] is either [`Cons`] and contains a value and
 //! another [`List`], or [`Nil`], which contains nothing.
+#![no_std]
 #![warn(missing_docs)]
+
+extern crate alloc;
+use alloc::boxed::Box;
+
 pub use List::{Cons, Nil};
 
 /// An enum that represents a `Cons` list.
@@ -17,8 +22,8 @@ pub enum List<T> {
     Nil
 }
 
-/// A type alias for the data contained by a [`Cons`],
-/// `(T, List<T>)`
+/// An alias for the data contained by a [`Cons`],
+/// `(T, List<T>)`.
 pub type ConsData<T> = (T, List<T>);
 
 impl<T> List<T> {
@@ -299,7 +304,7 @@ impl<T: Clone> IntoIterator for List<T> {
 // please tell me. raise an issue on the repo
 impl<T> FromIterator<T> for List<T> {
     fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
-        let mut container = std::collections::VecDeque::new();
+        let mut container = alloc::collections::VecDeque::new();
         // have to use a loop to make it List<T> instead of T
         for item in iter {
             container.push_back(Cons(item, Box::new(Nil)));
@@ -481,6 +486,7 @@ mod tests {
 
     #[test]
     fn map() {
+        use alloc::string::String;
         let x: List<String> = Cons(String::from("Hello"), Box::new(Nil));
         assert_eq!(x.map(|s| s.len()), List::new(5));
         assert_eq!(Nil.map(|s: String| s.len()), Nil);
@@ -496,6 +502,7 @@ mod tests {
 
     #[test]
     fn as_ref() {
+        use alloc::string::ToString;
         let x = Cons("air".to_string(), Box::new(List::new("hello".to_string())));
         assert_eq!(x.as_ref(), Cons(&"air".to_string(), Box::new(List::new(&"hello".to_string()))));
     }
