@@ -44,19 +44,6 @@ impl<T> List<T> {
     pub fn new(x: T) -> List<T> {
         Cons(x, Box::new(Nil))
     }
-    
-    /// Returns a new [`Cons`] where `x` is the only value
-    /// in the [`List`].
-    ///
-    /// This is equivalent to `Cons(x, Box::new(Nil))`.
-    #[inline]
-    #[deprecated(
-        since = "0.3.1",
-        note = "Use new() instead."
-    )]
-    pub fn new_val(x: T) -> List<T> {
-        List::new(x)
-    }
 
     /// Returns true if the List is a [`Cons`] value.
     ///
@@ -90,21 +77,6 @@ impl<T> List<T> {
     #[inline]
     pub const fn is_nil(&self) -> bool {
         !self.is_cons()
-    }
-
-    /// Converts from `&List<T>` to `List<&T>`. If `self` is [`Cons`],
-    /// `next` is always `Nil`. To preserve `next`, use [`as_ref`].
-    ///
-    /// [`as_ref`]: List::as_ref
-    #[deprecated(
-        since = "0.3.1", 
-        note = "Any usage of val_as_ref can be replaced with as_ref."
-    )]
-    pub fn val_as_ref(&self) -> List<&T> {
-        match *self {
-            Cons(ref val, _) => List::new(val),
-            Nil => Nil
-        }
     }
 
     /// Converts from `&List<T>` to `List<&T>`.
@@ -247,7 +219,7 @@ impl<T> List<T> {
     /// #
     /// let x = List::new("Hello World".to_string());
     /// let x_len = x.map(|s| s.len());
-    /// assert_eq!(x_len, List::new_val(11));
+    /// assert_eq!(x_len, List::new(11));
     ///
     /// let x: List<String> = Nil;
     /// let x_len = x.map(|s| s.len());
@@ -291,15 +263,6 @@ impl<T> List<T> {
     }
 }
 
-impl<T: Clone> IntoIterator for List<T> {
-    type Item = T;
-    type IntoIter = ListIterator<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        ListIterator::new(self)
-    }
-}
-
 // if anyone reads this and knows how to make it better,
 // please tell me. raise an issue on the repo
 impl<T> FromIterator<T> for List<T> {
@@ -317,31 +280,39 @@ impl<T> FromIterator<T> for List<T> {
     }
 }
 
-/// An iterator over a `List<T>`.
-/// 
-/// It is created by the [`into_iter`] method on [`List<T>`].
-///
-/// [`into_iter`]: List::into_iter
-pub struct ListIterator<T> {
-    next: Box<List<T>>
-}
+impl<'a, T> IntoIterator for &'a List<T> {
+    type Item = &'a T;
+    type IntoIter = ListIterator<'a, T>;
 
-impl<T> ListIterator<T> {
-    fn new(list: List<T>) -> ListIterator<T> {
-        ListIterator {
-            next: Box::new(list)
-        }
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        ListIterator::new(self)
     }
 }
 
-impl<T: Clone> Iterator for ListIterator<T> {
-    type Item = T;
+/// An iterator over a `List<T>`.
+/// 
+/// It is created by the `into_iter` method on [`List<T>`],
+/// provided by the `IntoIterator` trait.
+pub struct ListIterator<'a, T> {
+    next: &'a List<T>
+}
+
+impl<'a, T> ListIterator<'a, T> {
+    // private to the library, List::into_iter is the public API
+    #[inline]
+    fn new(list: &'a List<T>) -> Self {
+        ListIterator { next: list }
+    }
+}
+
+impl<'a, T> Iterator for ListIterator<'a, T> {
+    type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Cons(val, next) = &*self.next {
-            let tmp = val.clone();
-            self.next = next.clone();
-            Some(tmp)
+        if let Cons(val, next) = self.next {
+            self.next = &**next;
+            Some(val)
         } else {
             None
         }
@@ -543,15 +514,16 @@ mod tests {
     fn iter() {
         let list = Cons(2, Box::new(Cons(4, Box::new(Nil))));
         let mut iterator = list.into_iter();
-        assert_eq!(iterator.next(), Some(2));
-        assert_eq!(iterator.next(), Some(4));
+        assert_eq!(iterator.next(), Some(&2));
+        assert_eq!(iterator.next(), Some(&4));
         assert_eq!(iterator.next(), None);
     }
-
+   
+    
     #[test]
     fn iter_loop() {
         let list = Cons(0, Box::new(Cons(2, Box::new(Cons(4, Box::new(Nil))))));
-        for (i, val) in list.into_iter().enumerate() {
+        for (i, &val) in list.into_iter().enumerate() {
             assert_eq!(val, i * 2);
         }
     }
@@ -560,8 +532,8 @@ mod tests {
     fn for_loop() {
         let list = Cons(0, Box::new(Cons(1, Box::new(Cons(2, Box::new(Nil))))));
         let mut i = 0;
-        for val in list {
-            assert_eq!(val, i);
+        for val in &list {
+            assert_eq!(val, &i);
             i += 1;
         }
     }
