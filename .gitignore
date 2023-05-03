@@ -1,7 +1,5 @@
 target/
-bencher/target/
 .idea/
 Cargo.lock
 .replit
 replit.nix
-bench.sh

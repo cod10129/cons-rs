@@ -100,7 +100,7 @@ impl<T> List<T> {
     ///
     /// # Panics
     ///
-    /// Panics if `self` is [`Nil`].
+    /// Panics if `self` is [`Nil`] with a provided message.
     ///
     /// # Examples
     /// ```
@@ -261,63 +261,26 @@ impl<T> List<T> {
             Nil => Nil
         }
     }
-}
-
-// if anyone reads this and knows how to make it better,
-// please tell me. raise an issue on the repo
-impl<T> FromIterator<T> for List<T> {
-    fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
-        let mut container = alloc::collections::VecDeque::new();
-        // have to use a loop to make it List<T> instead of T
-        for item in iter {
-            container.push_back(Cons(item, Box::new(Nil)));
-        }
-        let mut list: List<T> = Nil;
-        while let Some(Cons(val, _)) = container.pop_back() {
-            list = Cons(val, Box::new(list));
-        }
-        list
+    
+    /// Returns an iterator over the `List`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use cons_rs::{List, Cons, Nil};
+    /// #
+    /// let list = Cons(1, Box::new(Cons(2, Box::new(Nil))));
+    /// let mut iter = list.iter();
+    /// assert_eq!(iter.next(), Some(&1));
+    /// assert_eq!(iter.next(), Some(&2));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter(&self) -> Iter<'_, T> {
+        iter::new_iter(self)
     }
 }
 
-impl<'a, T> IntoIterator for &'a List<T> {
-    type Item = &'a T;
-    type IntoIter = ListIterator<'a, T>;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        ListIterator::new(self)
-    }
-}
-
-/// An iterator over a `List<T>`.
-/// 
-/// It is created by the `into_iter` method on [`List<T>`],
-/// provided by the `IntoIterator` trait.
-pub struct ListIterator<'a, T> {
-    next: &'a List<T>
-}
-
-impl<'a, T> ListIterator<'a, T> {
-    // private to the library, List::into_iter is the public API
-    #[inline]
-    fn new(list: &'a List<T>) -> Self {
-        ListIterator { next: list }
-    }
-}
-
-impl<'a, T> Iterator for ListIterator<'a, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Cons(val, next) = self.next {
-            self.next = &**next;
-            Some(val)
-        } else {
-            None
-        }
-    }
-}
+mod iter;
+pub use iter::Iter;
 
 impl<T> List<&T> {
     /// Maps a `List<&T>` to a `List<T>` by copying the contents of the list.
@@ -334,6 +297,7 @@ impl<T> List<&T> {
     /// let copy_x = list_x.copied();
     /// assert_eq!(copy_x, List::new(3));
     /// ```
+    #[inline]
     pub fn copied(self) -> List<T> 
     where T: Copy {
         self.map(|x| *x)
@@ -353,6 +317,7 @@ impl<T> List<&T> {
     /// let clone_x = list_x.cloned();
     /// assert_eq!(clone_x, List::new(3));
     /// ```
+    #[inline]
     pub fn cloned(self) -> List<T>
     where T: Clone {
         self.map(|x| x.clone())
@@ -374,6 +339,7 @@ impl<T> List<&mut T> {
     /// let copy_x = list_x.copied();
     /// assert_eq!(copy_x, List::new(3));
     /// ```
+    #[inline]
     pub fn copied(self) -> List<T> 
     where T: Copy {
         self.map(|x| *x)
@@ -393,6 +359,7 @@ impl<T> List<&mut T> {
     /// let clone_x = list_x.cloned();
     /// assert_eq!(clone_x, List::new(3));
     /// ```
+    #[inline]
     pub fn cloned(self) -> List<T>
     where T: Clone {
         self.map(|x| x.clone())
@@ -517,25 +484,6 @@ mod tests {
         assert_eq!(iterator.next(), Some(&2));
         assert_eq!(iterator.next(), Some(&4));
         assert_eq!(iterator.next(), None);
-    }
-   
-    
-    #[test]
-    fn iter_loop() {
-        let list = Cons(0, Box::new(Cons(2, Box::new(Cons(4, Box::new(Nil))))));
-        for (i, &val) in list.into_iter().enumerate() {
-            assert_eq!(val, i * 2);
-        }
-    }
-
-    #[test]
-    fn for_loop() {
-        let list = Cons(0, Box::new(Cons(1, Box::new(Cons(2, Box::new(Nil))))));
-        let mut i = 0;
-        for val in &list {
-            assert_eq!(val, &i);
-            i += 1;
-        }
     }
 
     #[test]

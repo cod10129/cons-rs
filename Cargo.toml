@@ -1,12 +1,11 @@
 [package]
 name = "cons-rs"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 description = "A crate containing a Cons data structure."
 readme = "README.md"
 repository = "https://github.com/cod10129/cons-rs"
 license = "MIT"
-exclude = ["bench.sh"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
