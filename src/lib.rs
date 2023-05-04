@@ -1,505 +1,310 @@
-//! A list of nested pairs.
-//! 
-//! The type [`List`] represents an immutable singly linked list.
-//! Every [`List`] is either [`Cons`] and contains a value and
-//! another [`List`], or [`Nil`], which contains nothing.
+//! A crate that contains a singly linked list.
+//!
+//! Note:
+//! This is different from the standard [`LinkedList`],
+//! which is doubly linked.
+//!
+//! [`LinkedList`]: alloc::collections::LinkedList
 #![no_std]
 #![warn(missing_docs)]
 
 extern crate alloc;
 use alloc::boxed::Box;
 
-pub use List::{Cons, Nil};
-
-/// An enum that represents a `Cons` list.
-/// See [the module level documentation](self) for more.
-#[derive(Debug, PartialEq, Clone, Default)]
-pub enum List<T> {
-    /// A value of type `T`, and a Box containing another [`List`].
-    Cons(T, Box<List<T>>),
-    /// Nothing.
-    #[default]
-    Nil
+/// A singly linked list. See the [crate-level documentation]
+/// (crate) for more.
+pub struct List<T> {
+    head: Link<T>
 }
 
-/// An alias for the data contained by a [`Cons`],
-/// `(T, List<T>)`.
-pub type ConsData<T> = (T, List<T>);
+struct Node<T> {
+    elem: T,
+    next: Link<T>
+}
+
+type Link<T> = Option<Box<Node<T>>>;
 
 impl<T> List<T> {
-    /// Returns a new [`Cons`] where `x` is the only value
-    /// in the [`List`].
-    ///
-    /// This is equivalent to `Cons(x, Box::new(Nil))`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = List::new(5);
-    /// assert_eq!(x, Cons(5, Box::new(Nil)));
-    /// ```
+    /// Creates an empty `List`.
     #[inline]
-    pub fn new(x: T) -> List<T> {
-        Cons(x, Box::new(Nil))
+    #[must_use]
+    pub fn new() -> Self {
+        List { head: None }
     }
 
-    /// Returns true if the List is a [`Cons`] value.
-    ///
-    /// # Examples
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x: List<i32> = List::new(5);
-    /// assert_eq!(x.is_cons(), true);
-    ///
-    /// let x: List<i32> = Nil;
-    /// assert_eq!(x.is_cons(), false);
-    /// ```
+    /// Prepends an element to the beginning of the `List`.
+    pub fn push(&mut self, element: T) {
+        let new = Node {
+            elem: element,
+            next: self.head.take()
+        };
+
+        self.head = Some(Box::new(new));
+    }
+
+    /// Removes the element at the front of the `List`,
+    /// and returns it.
+    pub fn pop(&mut self) -> Option<T> {
+        self.head.take().map(|node| {
+            self.head = node.next;
+            node.elem
+        })
+    }
+
+    /// Checks if the `List` is empty.
     #[inline]
-    pub const fn is_cons(&self) -> bool {
-        matches!(self, Cons(_, _))
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.head.is_none()
     }
 
-    /// Returns true if the List is a [`Nil`] value.
-    ///
-    /// # Examples:
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x: List<i32> = List::new(5);
-    /// assert_eq!(x.is_nil(), false);
-    ///
-    /// let x: List<i32> = Nil;
-    /// assert_eq!(x.is_nil(), true);
-    /// ```
+    /// Returns an immutable reference to the value
+    /// at the head of the `List`, if it exists.
+    #[must_use]
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| {
+            &node.elem
+        })
+    }
+
+    /// Returns a mutable reference to the value
+    /// at the head of the `List`, if it exists.
+    #[must_use]
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| {
+            &mut node.elem
+        })
+    }
+
+    /// Creates an iterator that yields immutable references
+    /// to all the elements in the `List`.
+    /// 
+    /// To get mutable references, see [`iter_mut`](List::iter_mut).
     #[inline]
-    pub const fn is_nil(&self) -> bool {
-        !self.is_cons()
-    }
-
-    /// Converts from `&List<T>` to `List<&T>`.
-    pub fn as_ref(&self) -> List<&T> {
-        match *self {
-            Cons(ref val, ref next) => Cons(val, Box::new((**next).as_ref())),
-            Nil => Nil
-        }
-    }
-
-    /// Converts from `&mut List<T>` to `List<&mut T>`.
-    pub fn as_mut(&mut self) -> List<&mut T> {
-        match *self {
-            Cons(ref mut val, ref mut next) => Cons(val, Box::new((**next).as_mut())),
-            Nil => Nil
-        }
-    }
-
-    /// Returns the [`Cons`] value and next [`List`], 
-    /// consuming `self`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `self` is [`Nil`] with a provided message.
-    ///
-    /// # Examples
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = List::new(5);
-    /// assert_eq!(x.expect("foo"), (5, Nil));
-    /// ```
-    ///
-    /// ```should_panic
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x: List<i32> = Nil;
-    /// x.expect("foo"); // panics with "foo"
-    /// ```
-    #[inline]
-    pub fn expect(self, msg: &str) -> ConsData<T> {
-        match self {
-            Cons(val, next) => (val, *next),
-            Nil => panic!("{msg}")
-        }
-    }
-    
-    /// Returns the [`Cons`] value and next [`List`], 
-    /// consuming `self`.
-    ///
-    /// Usage of this function is discouraged, as it may panic.
-    /// Instead, prefer to use pattern matching, 
-    /// [`unwrap_or`] or [`unwrap_or_default`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if `self` is [`Nil`].
-    ///
-    /// # Examples
-    /// ```
-    /// # use cons_rs::{List, Nil};
-    /// #
-    /// let x = List::new(5);
-    /// assert_eq!(x.unwrap(), (5, Nil));
-    /// ```
-    ///
-    /// ```should_panic
-    /// # use cons_rs::{List, Nil};
-    /// #
-    /// let x: List<i32> = Nil;
-    /// assert_eq!(x.unwrap(), (5, Nil)); // fails
-    /// ```
-    ///
-    /// [`unwrap_or`]: List::unwrap_or
-    /// [`unwrap_or_default`]: List::unwrap_or_default
-    #[inline]
-    pub fn unwrap(self) -> ConsData<T> {
-        match self {
-            Cons(val, next) => (val, *next),
-            Nil => panic!("Called List::unwrap() on a Nil value.")
-        }
-    }
-
-    /// Returns the contained [`Cons`] value and [`List`],
-    /// or a provided default.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = List::new(5);
-    /// assert_eq!(x.unwrap_or((6, Nil)), (5, Nil));
-    ///
-    /// let x: List<i32> = Nil;
-    /// assert_eq!(x.unwrap_or((6, Nil)), (6, Nil));
-    /// ```
-    #[inline]
-    pub fn unwrap_or(self, default: ConsData<T>) -> ConsData<T> {
-        match self {
-            Cons(val, next) => (val, *next),
-            Nil => default
-        }
-    }
-
-    /// Returns the contained [`Cons`] value and [`List`], or a default.
-    ///
-    /// Consumes `self`, and if `self` is [`Cons`], returns the contained
-    /// value and list, otherwise, returns the [default value] 
-    /// for T and [`Nil`].
-    ///
-    /// # Examples
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = List::new(3);
-    /// assert_eq!(x.unwrap_or_default(), (3, Nil));
-    ///
-    /// let x: List<i32> = Nil;
-    /// assert_eq!(x.unwrap_or_default(), (0, Nil));
-    /// ```
-    ///
-    /// [default value]: Default::default
-    #[inline]
-    pub fn unwrap_or_default(self) -> ConsData<T> 
-    where T: Default {
-        match self {
-            Cons(val, next) => (val, *next),
-            Nil => (Default::default(), Nil)
-        }
-    }
-
-    /// Maps [`List<T>`] to [`List<U>`] by applying a function to the contained value
-    /// (if [`Cons`], discarding the `next` value), or if [`Nil`], returns [`Nil`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = List::new("Hello World".to_string());
-    /// let x_len = x.map(|s| s.len());
-    /// assert_eq!(x_len, List::new(11));
-    ///
-    /// let x: List<String> = Nil;
-    /// let x_len = x.map(|s| s.len());
-    /// assert_eq!(x_len, Nil);
-    /// ```
-    pub fn map<U, F>(self, f: F) -> List<U>
-    where F: FnOnce(T) -> U
-    {
-        match self {
-            Cons(val, _) => Cons(f(val), Box::new(Nil)),
-            Nil => Nil
-        }
-    }
-
-    /// Maps [`List<T>`] to [`List<U>`] by applying a function to the contained value
-    /// (if [`Cons`]), or returns [`Nil`] (if [`Nil`]).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// // you can unpack with a pattern
-    /// let f = |(x, list)| (x + 1, list);
-    /// let x = List::new(5).map_next(f);
-    /// assert_eq!(x, Cons(6, Box::new(Nil)));
-    ///
-    /// let x: List<i32> = Nil;
-    /// assert_eq!(x.map_next(f), Nil);
-    /// ```
-    pub fn map_next<U, F>(self, f: F) -> List<U>
-    where F: FnOnce(ConsData<T>) -> ConsData<U>
-    {
-        match self {
-            Cons(val, next) => {
-                let result = f((val, *next));
-                Cons(result.0, Box::new(result.1))
-            },
-            Nil => Nil
-        }
-    }
-    
-    /// Returns an iterator over the `List`.
-    ///
-    /// # Examples
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let list = Cons(1, Box::new(Cons(2, Box::new(Nil))));
-    /// let mut iter = list.iter();
-    /// assert_eq!(iter.next(), Some(&1));
-    /// assert_eq!(iter.next(), Some(&2));
-    /// assert_eq!(iter.next(), None);
-    /// ```
     pub fn iter(&self) -> Iter<'_, T> {
-        iter::new_iter(self)
+        Iter { next: self.head.as_deref() }
+    }
+
+    /// Creates an iterator that yields mutable references
+    /// to all the elements in the `List`.
+    ///
+    /// To get immutable references, see [`iter`](List::iter).
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut { next: self.head.as_deref_mut() }
     }
 }
 
-mod iter;
-pub use iter::Iter;
+/// An [iterator] that yields immutable references to 
+/// all the elements in a `List`.
+///
+/// For mutable references, see [`IterMut`].
+///
+/// [iterator]: Iterator
+#[must_use]
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>
+}
 
-impl<T> List<&T> {
-    /// Maps a `List<&T>` to a `List<T>` by copying the contents of the list.
-    ///
-    /// # Examples
-    /// 
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = 3;
-    /// let list_x = List::new(&x);
-    /// assert_eq!(list_x, List::new(&3));
-    ///
-    /// let copy_x = list_x.copied();
-    /// assert_eq!(copy_x, List::new(3));
-    /// ```
-    #[inline]
-    pub fn copied(self) -> List<T> 
-    where T: Copy {
-        self.map(|x| *x)
-    }
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
 
-    /// Maps a `List<&T>` to a `List<T>` by cloning the contents of the list.
-    ///
-    /// # Examples
-    /// 
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let x = 3;
-    /// let list_x = List::new(&x);
-    /// assert_eq!(list_x, List::new(&3));
-    ///
-    /// let clone_x = list_x.cloned();
-    /// assert_eq!(clone_x, List::new(3));
-    /// ```
-    #[inline]
-    pub fn cloned(self) -> List<T>
-    where T: Clone {
-        self.map(|x| x.clone())
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_deref();
+            &node.elem
+        })
     }
 }
 
-impl<T> List<&mut T> {
-    /// Maps a `List<&mut T>` to a `List<T>` by copying the contents of the list.
-    ///
-    /// # Examples
-    /// 
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let mut x = 3;
-    /// let list_x = List::new(&mut x);
-    /// assert_eq!(list_x, List::new(&mut 3));
-    ///
-    /// let copy_x = list_x.copied();
-    /// assert_eq!(copy_x, List::new(3));
-    /// ```
-    #[inline]
-    pub fn copied(self) -> List<T> 
-    where T: Copy {
-        self.map(|x| *x)
-    }
+/// An [iterator] that yields mutable references to 
+/// all the elements in a `List`.
+///
+/// For immutable references, see [`Iter`].
+///
+/// [iterator]: Iterator
+#[must_use]
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>
+}
 
-    /// Maps a `List<&mut T>` to a `List<T>` by cloning the contents of the list.
-    ///
-    /// # Examples
-    /// 
-    /// ```
-    /// # use cons_rs::{List, Cons, Nil};
-    /// #
-    /// let mut x = 3;
-    /// let list_x = List::new(&mut x);
-    /// assert_eq!(list_x, List::new(&mut 3));
-    ///
-    /// let clone_x = list_x.cloned();
-    /// assert_eq!(clone_x, List::new(3));
-    /// ```
-    #[inline]
-    pub fn cloned(self) -> List<T>
-    where T: Clone {
-        self.map(|x| x.clone())
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_deref_mut();
+            &mut node.elem
+        })
+    }
+}
+
+/// An [iterator] that yields all the elements in a `List` by value.
+///
+/// [iterator]: Iterator
+#[must_use]
+pub struct IntoIter<T>(List<T>);
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop()
+    }
+}
+
+impl<T> FromIterator<T> for List<T> {
+    fn from_iter<I>(iter: I) -> Self 
+    where I: IntoIterator<Item = T> {
+        let mut list = List::new();
+        for elem in iter {
+            list.push(elem);
+        }
+        list
+    }
+}
+
+impl<T> IntoIterator for List<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter(self)
+    }
+}
+
+impl<T> Default for List<T> {
+    fn default() -> Self {
+        List::new()
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut current = self.head.take();
+
+        while let Some(mut node) = current {
+            current = node.next.take();
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::List;
     
     #[test]
-    fn is_cons() {
-        let list = Cons(3, Box::new(Nil));
-        assert!(list.is_cons());
-        assert!(!list.is_nil());
-    }
+    fn push_and_pop() {
+        let mut list = List::new();
 
-    #[test]
-    fn is_nil() {
-        let list: List<i32> = Nil;
-        assert!(list.is_nil());
-        assert!(!list.is_cons());
-    }
+        assert_eq!(list.pop(), None);
 
-    #[test]
-    fn expect() {
-        let x = List::new(5);
-        assert_eq!(x.expect("foo"), (5, Nil));
-    }
+        list.push(1);
+        list.push(2);
+        list.push(3);
 
-    #[test]
-    #[should_panic(expected = "foobar")]
-    fn expect_panic() {
-        let x: List<i32> = Nil;
-        x.expect("foobar");
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(2));
+
+        list.push(4);
+        list.push(5);
+
+        assert_eq!(list.pop(), Some(5));
+        assert_eq!(list.pop(), Some(4));
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), None);
     }
     
     #[test]
-    fn unwrap() {
-        let x = Cons(2, Box::new(Nil));
-        assert_eq!(x.unwrap(), (2, Nil));
+    fn peek() {
+        let mut list = List::new();
+        assert_eq!(list.peek(), None);
+        assert_eq!(list.peek_mut(), None);
+
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        assert_eq!(list.peek(), Some(&3));
+        assert_eq!(list.peek_mut(), Some(&mut 3));
+        list.peek_mut().map(|val| *val = 42);
+
+        assert_eq!(list.peek(), Some(&42));
+        assert_eq!(list.peek_mut(), Some(&mut 42));
+        assert_eq!(list.pop(), Some(42));
+        assert_eq!(list.pop(), Some(2));
     }
 
     #[test]
-    #[should_panic(expected = "List::unwrap")]
-    fn unwrap_panic() {
-        let x: List<u32> = Nil;
-        x.unwrap(); // panics
+    fn into_iter() {
+        let mut list = List::new();
+
+        list.push(1);
+        list.push(2);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
-    fn unwrap_or() {
-        let x: List<u32> = Nil;
-        assert_eq!(x.unwrap_or((3, Nil)), (3, Nil));
+    fn for_loop() {
+        let mut list = List::new();
+
+        list.push(0);
+        list.push(1);
+
+        let mut i = 1;
+        for elem in list {
+            assert_eq!(elem, i);
+            i -= 1;
+        }
     }
 
-    #[test]
-    fn unwrap_or_default() {
-        let x: List<u32> = Nil;
-        assert_eq!(x.unwrap_or_default(), (0, Nil));
-    }
-
-    #[test]
-    fn map() {
-        use alloc::string::String;
-        let x: List<String> = Cons(String::from("Hello"), Box::new(Nil));
-        assert_eq!(x.map(|s| s.len()), List::new(5));
-        assert_eq!(Nil.map(|s: String| s.len()), Nil);
-    }
-
-    #[test]
-    fn map_next() {
-        let f = |(x, y)| (x + 1, y);
-        let x = Cons(2, Box::new(List::new(3)));
-        assert_eq!(x.map_next(f), Cons(3, Box::new(List::new(3))));
-        assert_eq!(Nil.map_next(f), Nil);
-    }
-
-    #[test]
-    fn as_ref() {
-        use alloc::string::ToString;
-        let x = Cons("air".to_string(), Box::new(List::new("hello".to_string())));
-        assert_eq!(x.as_ref(), Cons(&"air".to_string(), Box::new(List::new(&"hello".to_string()))));
-    }
-
-    #[test]
-    fn as_mut() {
-        let mut x = List::new(6);
-        assert_eq!(x.as_mut(), List::new(&mut 6));
-    }
-
-    #[test]
-    fn cl_ref() {
-        let x = List::new(&4);
-        assert_eq!(x.cloned(), List::new(4));
-    }
-
-    #[test]
-    fn cp_ref() {
-        let x = List::new(&4);
-        assert_eq!(x.copied(), List::new(4));
-    }
-
-    #[test]
-    fn cl_mut() {
-        let mut v = 4;
-        let x = List::new(&mut v);
-        assert_eq!(x.cloned(), List::new(v));
-    }
-
-    #[test]
-    fn cp_mut() {
-        let mut v = 4;
-        let x = List::new(&mut v);
-        assert_eq!(x.copied(), List::new(v));
-    }
-    
     #[test]
     fn iter() {
-        let list = Cons(2, Box::new(Cons(4, Box::new(Nil))));
-        let mut iterator = list.into_iter();
-        assert_eq!(iterator.next(), Some(&2));
-        assert_eq!(iterator.next(), Some(&4));
-        assert_eq!(iterator.next(), None);
+        let mut list = List::new();
+
+        list.push(1);
+        list.push(2);
+
+        let mut iter = list.iter();
+
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut list = List::new();
+
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        let mut iter = list.iter_mut();
+
+        assert_eq!(iter.next(), Some(&mut 3));
+        assert_eq!(iter.next(), Some(&mut 2));
+        iter.next().map(|val| *val = 10);
+        assert_eq!(iter.next(), None);
+
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(2));
+        assert_eq!(list.pop(), Some(10));
+        assert_eq!(list.pop(), None);
     }
 
     #[test]
     fn from_iter() {
-        let list: List<_> = List::from_iter(1..=5);
+        let vec = alloc::vec![1, 2, 3];
+        let mut list: List<_> = vec.into_iter().collect();
 
-        assert_eq!(list, 
-                  Cons(1, Box::new(
-                      Cons(2, Box::new(
-                          Cons(3, Box::new(
-                              Cons(4, Box::new(
-                                  Cons(5, Box::new(Nil))
-                              ))
-                          ))
-                      ))
-                  )));
-                // that was 11 close-parens in a row
+        assert_eq!(list.pop(), Some(3));
+        assert_eq!(list.pop(), Some(2));
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), None);
     }
 }
