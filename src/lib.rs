@@ -19,13 +19,14 @@ use alloc::boxed::Box;
 
 /// A singly linked list. See the [crate-level documentation]
 /// (crate) for more.
+#[derive(Default)]
 pub struct List<T> {
-    head: Link<T>
+    head: Link<T>,
 }
 
 struct Node<T> {
     elem: T,
-    next: Link<T>
+    next: Link<T>,
 }
 
 type Link<T> = Option<Box<Node<T>>>;
@@ -41,7 +42,7 @@ impl<T> List<T> {
     pub fn push(&mut self, element: T) {
         let new = Node {
             elem: element,
-            next: self.head.take()
+            next: self.head.take(),
         };
 
         self.head = Some(Box::new(new));
@@ -65,26 +66,24 @@ impl<T> List<T> {
     /// Returns an immutable reference to the value
     /// at the head of the `List`, if it exists.
     pub fn peek(&self) -> Option<&T> {
-        self.head.as_ref().map(|node| {
-            &node.elem
-        })
+        self.head.as_ref().map(|node| &node.elem)
     }
 
     /// Returns a mutable reference to the value
     /// at the head of the `List`, if it exists.
     pub fn peek_mut(&mut self) -> Option<&mut T> {
-        self.head.as_mut().map(|node| {
-            &mut node.elem
-        })
+        self.head.as_mut().map(|node| &mut node.elem)
     }
 
     /// Creates an iterator that yields immutable references
     /// to all the elements in the `List`.
-    /// 
+    ///
     /// To get mutable references, see [`iter_mut`](List::iter_mut).
     #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
-        Iter { next: self.head.as_deref() }
+        Iter {
+            next: self.head.as_deref(),
+        }
     }
 
     /// Creates an iterator that yields mutable references
@@ -93,18 +92,20 @@ impl<T> List<T> {
     /// To get immutable references, see [`iter`](List::iter).
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
-        IterMut { next: self.head.as_deref_mut() }
+        IterMut {
+            next: self.head.as_deref_mut(),
+        }
     }
 }
 
-/// An [iterator] that yields immutable references to 
+/// An [iterator] that yields immutable references to
 /// all the elements in a `List`.
 ///
 /// For mutable references, see [`IterMut`].
 ///
 /// [iterator]: Iterator
 pub struct Iter<'a, T> {
-    next: Option<&'a Node<T>>
+    next: Option<&'a Node<T>>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T> {
@@ -118,14 +119,14 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-/// An [iterator] that yields mutable references to 
+/// An [iterator] that yields mutable references to
 /// all the elements in a `List`.
 ///
 /// For immutable references, see [`Iter`].
 ///
 /// [iterator]: Iterator
 pub struct IterMut<'a, T> {
-    next: Option<&'a mut Node<T>>
+    next: Option<&'a mut Node<T>>,
 }
 
 impl<'a, T> Iterator for IterMut<'a, T> {
@@ -153,8 +154,10 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> FromIterator<T> for List<T> {
-    fn from_iter<I>(iter: I) -> Self 
-    where I: IntoIterator<Item = T> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
         let mut list = List::new();
         for elem in iter {
             list.push(elem);
@@ -172,12 +175,6 @@ impl<T> IntoIterator for List<T> {
     }
 }
 
-impl<T> Default for List<T> {
-    fn default() -> Self {
-        List::new()
-    }
-}
-
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
         let mut current = self.head.take();
@@ -191,7 +188,7 @@ impl<T> Drop for List<T> {
 #[cfg(test)]
 mod tests {
     use super::List;
-    
+
     #[test]
     fn push_and_pop() {
         let mut list = List::new();
@@ -213,7 +210,7 @@ mod tests {
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
     }
-    
+
     #[test]
     fn peek() {
         let mut list = List::new();
