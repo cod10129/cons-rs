@@ -8,6 +8,12 @@
 #![no_std]
 #![warn(missing_docs)]
 
+// clippy settings
+#![warn(clippy::alloc_instead_of_core)]
+#![warn(clippy::std_instead_of_alloc)]
+#![warn(clippy::std_instead_of_core)]
+#![allow(clippy::must_use_candidate)]
+
 extern crate alloc;
 use alloc::boxed::Box;
 
@@ -27,7 +33,6 @@ type Link<T> = Option<Box<Node<T>>>;
 impl<T> List<T> {
     /// Creates an empty `List`.
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         List { head: None }
     }
@@ -53,14 +58,12 @@ impl<T> List<T> {
 
     /// Checks if the `List` is empty.
     #[inline]
-    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.head.is_none()
     }
 
     /// Returns an immutable reference to the value
     /// at the head of the `List`, if it exists.
-    #[must_use]
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| {
             &node.elem
@@ -69,7 +72,6 @@ impl<T> List<T> {
 
     /// Returns a mutable reference to the value
     /// at the head of the `List`, if it exists.
-    #[must_use]
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.head.as_mut().map(|node| {
             &mut node.elem
@@ -101,7 +103,6 @@ impl<T> List<T> {
 /// For mutable references, see [`IterMut`].
 ///
 /// [iterator]: Iterator
-#[must_use]
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>
 }
@@ -123,7 +124,6 @@ impl<'a, T> Iterator for Iter<'a, T> {
 /// For immutable references, see [`Iter`].
 ///
 /// [iterator]: Iterator
-#[must_use]
 pub struct IterMut<'a, T> {
     next: Option<&'a mut Node<T>>
 }
@@ -142,7 +142,6 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 /// An [iterator] that yields all the elements in a `List` by value.
 ///
 /// [iterator]: Iterator
-#[must_use]
 pub struct IntoIter<T>(List<T>);
 
 impl<T> Iterator for IntoIter<T> {
