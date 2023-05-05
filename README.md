@@ -11,4 +11,4 @@ It has migrated from its past as a "list of nested pairs"
 to what it has actually been the entire time, a singly-linked list.
 
 The main reason I didn't publish this as a new crate is because
-all the names are taken, and the *use cases* are the same.
+all the names are taken, and the *use cases* are mostly the same.
