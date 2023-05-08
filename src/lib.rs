@@ -13,12 +13,15 @@
 #![warn(clippy::std_instead_of_alloc)]
 #![warn(clippy::std_instead_of_core)]
 #![allow(clippy::must_use_candidate)]
+#![allow(clippy::return_self_not_must_use)]
 
 extern crate alloc;
 use alloc::boxed::Box;
 
-/// A singly linked list. See the [crate-level documentation]
-/// (crate) for more.
+pub mod immutable;
+
+/// A singly linked list.
+/// See the [crate-level documentation](crate) for more.
 #[derive(Default)]
 pub struct List<T> {
     head: Link<T>,
@@ -65,17 +68,19 @@ impl<T> List<T> {
 
     /// Returns an immutable reference to the value
     /// at the head of the `List`, if it exists.
+    #[inline]
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
 
     /// Returns a mutable reference to the value
     /// at the head of the `List`, if it exists.
+    #[inline]
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.head.as_mut().map(|node| &mut node.elem)
     }
 
-    /// Creates an iterator that yields immutable references
+    /// Creates an [iterator that yields immutable references](Iter)
     /// to all the elements in the `List`.
     ///
     /// To get mutable references, see [`iter_mut`](List::iter_mut).
@@ -86,7 +91,7 @@ impl<T> List<T> {
         }
     }
 
-    /// Creates an iterator that yields mutable references
+    /// Creates an [iterator that yields mutable references](IterMut)
     /// to all the elements in the `List`.
     ///
     /// To get immutable references, see [`iter`](List::iter).
@@ -98,12 +103,10 @@ impl<T> List<T> {
     }
 }
 
-/// An [iterator] that yields immutable references to
-/// all the elements in a `List`.
+/// An [iterator](Iterator) that yields immutable references
+/// to all the elements in a `List`.
 ///
 /// For mutable references, see [`IterMut`].
-///
-/// [iterator]: Iterator
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>,
 }
@@ -119,12 +122,10 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-/// An [iterator] that yields mutable references to
-/// all the elements in a `List`.
+/// An [iterator](Iterator) that yields mutable references
+/// to all the elements in a `List`.
 ///
 /// For immutable references, see [`Iter`].
-///
-/// [iterator]: Iterator
 pub struct IterMut<'a, T> {
     next: Option<&'a mut Node<T>>,
 }
@@ -140,9 +141,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
     }
 }
 
-/// An [iterator] that yields all the elements in a `List` by value.
-///
-/// [iterator]: Iterator
+/// An [iterator](Iterator) that yields all the elements in a `List` by value.
 pub struct IntoIter<T>(List<T>);
 
 impl<T> Iterator for IntoIter<T> {
@@ -154,10 +153,20 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> FromIterator<T> for List<T> {
-    fn from_iter<I>(iter: I) -> Self
-    where
-        I: IntoIterator<Item = T>,
-    {
+    /// Creates a `List` from an Iterator.
+    ///
+    /// Note that the order of elements is REVERSED.
+    /// This is subject to change in the future.
+    /// ```
+    /// use cons_rs::List;
+    ///
+    /// let mut list: List<i32> = vec![1, 2]::collect();
+    ///
+    /// assert_eq!(list.pop(), Some(2));
+    /// assert_eq!(list.pop(), Some(1));
+    /// assert_eq!(list.pop(), None);
+    /// ```
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut list = List::new();
         for elem in iter {
             list.push(elem);
@@ -229,6 +238,27 @@ mod tests {
         assert_eq!(list.peek_mut(), Some(&mut 42));
         assert_eq!(list.pop(), Some(42));
         assert_eq!(list.pop(), Some(2));
+    }
+
+    #[test]
+    fn is_empty() {
+        let mut list = List::new();
+        assert!(list.is_empty());
+
+        list.push(1);
+        assert!(!list.is_empty());
+
+        list.pop();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn default() {
+        let mut list = List::default();
+        assert!(list.is_empty());
+        list.push(1);
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), None);
     }
 
     #[test]
