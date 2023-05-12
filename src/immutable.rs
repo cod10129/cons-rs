@@ -113,9 +113,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let list = List::new()
-                    .prepend(1)
-                    .prepend(2);
+        let list = List::new().prepend(1).prepend(2);
 
         let mut iter = list.iter();
         

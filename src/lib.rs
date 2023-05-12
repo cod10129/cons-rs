@@ -36,12 +36,34 @@ type Link<T> = Option<Box<Node<T>>>;
 
 impl<T> List<T> {
     /// Creates an empty `List`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    ///
+    /// let list: List<i32> = List::new();
+    /// ```
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         List { head: None }
     }
 
     /// Prepends an element to the beginning of the `List`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    ///
+    /// list.push(1);
+    /// assert_eq!(list.peek(), Some(&1));
+    ///
+    /// list.push(2);
+    /// assert_eq!(list.peek(), Some(&2));
+    /// ```
     pub fn push(&mut self, element: T) {
         let new = Node {
             elem: element,
@@ -53,6 +75,20 @@ impl<T> List<T> {
 
     /// Removes the element at the front of the `List`,
     /// and returns it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    /// assert_eq!(list.pop(), None);
+    ///
+    /// list.push(1);
+    ///
+    /// assert_eq!(list.pop(), Some(1));
+    /// assert_eq!(list.pop(), None);
+    /// ```
     pub fn pop(&mut self) -> Option<T> {
         self.head.take().map(|node| {
             self.head = node.next;
@@ -61,6 +97,18 @@ impl<T> List<T> {
     }
 
     /// Checks if the `List` is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    /// assert!(list.is_empty());
+    ///
+    /// list.push(1);
+    /// assert!(!list.is_empty());
+    /// ```
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.head.is_none()
@@ -68,6 +116,18 @@ impl<T> List<T> {
 
     /// Returns an immutable reference to the value
     /// at the head of the `List`, if it exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    /// assert_eq!(list.peek(), None);
+    ///
+    /// list.push(1);
+    /// assert_eq!(list.peek(), Some(&1));
+    /// ```
     #[inline]
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
@@ -75,6 +135,21 @@ impl<T> List<T> {
 
     /// Returns a mutable reference to the value
     /// at the head of the `List`, if it exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    /// assert_eq!(list.peek_mut(), None);
+    ///
+    /// list.push(1);
+    /// assert_eq!(list.peek_mut(), Some(&mut 1));
+    ///
+    /// *list.peek_mut().unwrap() = 50;
+    /// assert_eq!(list.peek_mut(), Some(&mut 50));
+    /// ```
     #[inline]
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.head.as_mut().map(|node| &mut node.elem)
@@ -84,6 +159,22 @@ impl<T> List<T> {
     /// to all the elements in the `List`.
     ///
     /// To get mutable references, see [`iter_mut`](List::iter_mut).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    ///
+    /// list.push(1);
+    /// list.push(2);
+    ///
+    /// let mut iter = list.iter();
+    /// assert_eq!(iter.next(), Some(&2));
+    /// assert_eq!(iter.next(), Some(&1));
+    /// assert_eq!(iter.next(), None);
+    /// ```
     #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
         Iter {
@@ -95,6 +186,25 @@ impl<T> List<T> {
     /// to all the elements in the `List`.
     ///
     /// To get immutable references, see [`iter`](List::iter).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    /// 
+    /// let mut list = List::new();
+    /// 
+    /// list.push(1);
+    /// list.push(2);
+    ///
+    /// for elem in list.iter_mut() {
+    ///     *elem += 10;
+    /// }
+    ///
+    /// assert_eq!(list.pop(), Some(12));
+    /// assert_eq!(list.pop(), Some(11));
+    /// assert_eq!(list.pop(), None);
+    /// ```
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
@@ -153,19 +263,6 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> FromIterator<T> for List<T> {
-    /// Creates a `List` from an Iterator.
-    ///
-    /// Note that the order of elements is REVERSED.
-    /// This is subject to change in the future.
-    /// ```
-    /// use cons_rs::List;
-    ///
-    /// let mut list: List<i32> = vec![1, 2]::collect();
-    ///
-    /// assert_eq!(list.pop(), Some(2));
-    /// assert_eq!(list.pop(), Some(1));
-    /// assert_eq!(list.pop(), None);
-    /// ```
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut list = List::new();
         for elem in iter {
