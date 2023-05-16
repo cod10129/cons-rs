@@ -1,12 +1,16 @@
 [package]
 name = "cons-rs"
-version = "0.6.3"
+version = "0.6.4"
 edition = "2021"
 description = "A crate containing a Cons data structure."
-readme = "README.md"
+include = [
+    "/Cargo.toml",
+    "/LICENSE",
+    "/README.md",
+    "/src/**",
+]
 repository = "https://github.com/cod10129/cons-rs"
 license = "MIT"
-keywords = []
 categories = ["data-structures"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

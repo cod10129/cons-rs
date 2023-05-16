@@ -9,11 +9,13 @@
 #![warn(missing_docs)]
 
 // clippy settings
-#![warn(clippy::alloc_instead_of_core)]
-#![warn(clippy::std_instead_of_alloc)]
-#![warn(clippy::std_instead_of_core)]
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::return_self_not_must_use)]
+#![warn(clippy::alloc_instead_of_core, 
+    clippy::std_instead_of_alloc, 
+    clippy::std_instead_of_core
+)]
+#![allow(clippy::must_use_candidate, 
+    clippy::return_self_not_must_use
+)]
 
 extern crate alloc;
 use alloc::boxed::Box;
@@ -22,7 +24,6 @@ pub mod immutable;
 
 /// A singly linked list.
 /// See the [crate-level documentation](crate) for more.
-#[derive(Default)]
 pub struct List<T> {
     head: Link<T>,
 }
@@ -113,7 +114,7 @@ impl<T> List<T> {
     pub fn is_empty(&self) -> bool {
         self.head.is_none()
     }
-
+    
     /// Returns an immutable reference to the value
     /// at the head of the `List`, if it exists.
     ///
@@ -213,6 +214,23 @@ impl<T> List<T> {
     }
 }
 
+impl<T> Default for List<T> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut current = self.head.take();
+
+        while let Some(mut node) = current {
+            current = node.next.take();
+        }
+    }
+}
+
 /// An [iterator](Iterator) that yields immutable references
 /// to all the elements in a `List`.
 ///
@@ -278,16 +296,6 @@ impl<T> IntoIterator for List<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter(self)
-    }
-}
-
-impl<T> Drop for List<T> {
-    fn drop(&mut self) {
-        let mut current = self.head.take();
-
-        while let Some(mut node) = current {
-            current = node.next.take();
-        }
     }
 }
 

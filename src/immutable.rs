@@ -19,6 +19,14 @@ type Link<T> = Option<Rc<Node<T>>>;
 
 impl<T> List<T> {
     /// Creates a new `List`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list: List<i32> = List::new();
+    /// ```
     #[inline]
     pub fn new() -> List<T> {
         List { head: None }
@@ -26,6 +34,16 @@ impl<T> List<T> {
 
     /// Prepends a given element to the list,
     /// returning a copy of the list with the added element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list = List::new().prepend(1);
+    ///
+    /// assert_eq!(list.head(), Some(&1));
+    /// ```
     pub fn prepend(&self, element: T) -> List<T> {
         List { head: Some(Rc::new(Node {
             elem: element,
