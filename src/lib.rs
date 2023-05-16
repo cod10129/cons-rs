@@ -9,11 +9,13 @@
 #![warn(missing_docs)]
 
 // clippy settings
-#![warn(clippy::alloc_instead_of_core, 
+#![warn(
+    clippy::alloc_instead_of_core, 
     clippy::std_instead_of_alloc, 
     clippy::std_instead_of_core
 )]
-#![allow(clippy::must_use_candidate, 
+#![allow(
+    clippy::must_use_candidate, 
     clippy::return_self_not_must_use
 )]
 
@@ -22,8 +24,8 @@ use alloc::boxed::Box;
 
 pub mod immutable;
 
-/// A singly linked list.
-/// See the [crate-level documentation](crate) for more.
+// /// A singly linked list.
+// /// See the [crate-level documentation](crate) for more.
 pub struct List<T> {
     head: Link<T>,
 }
