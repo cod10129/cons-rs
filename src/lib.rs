@@ -24,8 +24,8 @@ use alloc::boxed::Box;
 
 pub mod immutable;
 
-// /// A singly linked list.
-// /// See the [crate-level documentation](crate) for more.
+/// A singly linked list.
+/// See the [crate-level documentation](crate) for more.
 pub struct List<T> {
     head: Link<T>,
 }
