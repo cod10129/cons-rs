@@ -52,6 +52,18 @@ impl<T> List<T> {
     }
 
     /// Returns a copy of the list with the first element removed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list = List::new().prepend(1);
+    /// assert_eq!(list.tail().head(), None);
+    ///
+    /// let list = List::new().prepend(1).prepend(2);
+    /// assert_eq!(list.tail().head(), Some(&1));
+    /// ```
     pub fn tail(&self) -> List<T> {
         List {
             head: self.head.as_ref().and_then(|node| node.next.clone()) 
@@ -60,12 +72,36 @@ impl<T> List<T> {
 
     /// Returns a reference to the first element in the list,
     /// if it exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list = List::new().prepend(1);
+    ///
+    /// assert_eq!(list.head(), Some(&1));
+    /// ```
     pub fn head(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
 
     /// Creates an [iterator that yields references](Iter)
     /// to all the elements in the list.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list = List::new().prepend(1).prepend(2);
+    ///
+    /// let mut iter = list.iter();
+    ///
+    /// assert_eq!(iter.next(), Some(&2));
+    /// assert_eq!(iter.next(), Some(&1));
+    /// assert_eq!(iter.next(), None);
+    /// ```
     pub fn iter(&self) -> Iter<'_, T> {
         Iter { next: self.head.as_deref() }
     }
