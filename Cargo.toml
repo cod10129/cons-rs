@@ -4,10 +4,10 @@ version = "0.6.4"
 edition = "2021"
 description = "A crate containing a Cons data structure."
 include = [
-    "/Cargo.toml",
-    "/LICENSE",
-    "/README.md",
-    "/src/**",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+    "src/**",
 ]
 repository = "https://github.com/cod10129/cons-rs"
 license = "MIT"
