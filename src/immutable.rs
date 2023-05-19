@@ -4,6 +4,8 @@
 //! but modification of the [pointers](Rc) between them.
 use alloc::rc::Rc;
 
+use super::FusedIterator;
+
 /// A singly linked immutable list.
 /// See the [module-level documentation](self) for more.
 pub struct List<T> {
@@ -28,7 +30,7 @@ impl<T> List<T> {
     /// let list: List<i32> = List::new();
     /// ```
     #[inline]
-    pub fn new() -> List<T> {
+    pub const fn new() -> List<T> {
         List { head: None }
     }
 
@@ -86,6 +88,41 @@ impl<T> List<T> {
         self.head.as_ref().map(|node| &node.elem)
     }
 
+    /// Returns the length of the list.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list = List::new();
+    /// assert_eq!(list.len(), 0);
+    ///
+    /// let list = list.prepend(3);
+    /// assert_eq!(list.len(), 1);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.iter().len()
+    }
+
+    /// Checks if the list is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::immutable::List;
+    /// 
+    /// let list = List::new();
+    /// assert!(list.is_empty());
+    ///
+    /// let list = list.prepend(1);
+    /// assert!(!list.is_empty());
+    /// ```
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.head.is_none()
+    }
+    
     /// Creates an [iterator that yields references](Iter)
     /// to all the elements in the list.
     ///
@@ -142,7 +179,22 @@ impl<'a, T> Iterator for Iter<'a, T> {
             &node.elem
         })
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let mut len = 0;
+        let mut curr = self.next;
+        while let Some(node) = curr {
+            curr = node.next.as_deref();
+            len += 1;
+        }
+        (len, Some(len))
+    }
 }
+
+// No methods because default impls are fine
+impl<'a, T> ExactSizeIterator for Iter<'a, T> {}
+
+impl<'a, T> FusedIterator for Iter<'a, T> {}
 
 #[cfg(test)]
 mod tests {
@@ -165,6 +217,17 @@ mod tests {
         assert_eq!(list.head(), None);
     }
 
+    #[test]
+    fn len() {
+        let list = List::new();
+        assert_eq!(list.len(), 0);
+        assert_eq!(list.iter().size_hint(), (0, Some(0)));
+
+        let list = list.prepend(1);
+        assert_eq!(list.len(), 1);
+        assert_eq!(list.iter().size_hint(), (1, Some(1)));
+    }
+    
     #[test]
     fn iter() {
         let list = List::new().prepend(1).prepend(2);
