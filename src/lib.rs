@@ -133,7 +133,6 @@ impl<T> List<T> {
     /// list.push(1);
     /// assert_eq!(list.len(), 1);
     /// ```
-    #[inline]
     pub fn len(&self) -> usize {
         self.iter().len()
     }
@@ -152,7 +151,6 @@ impl<T> List<T> {
     /// list.push(1);
     /// assert_eq!(list.peek(), Some(&1));
     /// ```
-    #[inline]
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
@@ -174,7 +172,6 @@ impl<T> List<T> {
     /// *list.peek_mut().unwrap() = 50;
     /// assert_eq!(list.peek_mut(), Some(&mut 50));
     /// ```
-    #[inline]
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.head.as_mut().map(|node| &mut node.elem)
     }
@@ -199,7 +196,6 @@ impl<T> List<T> {
     /// assert_eq!(iter.next(), Some(&1));
     /// assert_eq!(iter.next(), None);
     /// ```
-    #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             next: self.head.as_deref(),
@@ -229,7 +225,6 @@ impl<T> List<T> {
     /// assert_eq!(list.pop(), Some(11));
     /// assert_eq!(list.pop(), None);
     /// ```
-    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut {
             next: self.head.as_deref_mut(),
