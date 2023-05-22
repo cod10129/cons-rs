@@ -4,7 +4,7 @@
 //! but modification of the [pointers](Rc) between them.
 use alloc::rc::Rc;
 
-use super::FusedIterator;
+use super::{FusedIterator, fmt, Debug};
 
 /// A singly linked immutable list.
 /// See the [module-level documentation](self) for more.
@@ -141,6 +141,18 @@ impl<T> List<T> {
     /// ```
     pub fn iter(&self) -> Iter<'_, T> {
         Iter { next: self.head.as_deref() }
+    }
+}
+
+impl<T> Clone for List<T> {
+    fn clone(&self) -> Self {
+        List { head: self.head.clone() }
+    }
+}
+
+impl<T: Debug> Debug for List<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.iter()).finish()
     }
 }
 

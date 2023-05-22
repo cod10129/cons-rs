@@ -24,6 +24,7 @@ extern crate alloc;
 use alloc::boxed::Box;
 
 use core::iter::FusedIterator;
+use core::fmt::{self, Debug};
 
 pub mod immutable;
 
@@ -229,6 +230,18 @@ impl<T> List<T> {
         IterMut {
             next: self.head.as_deref_mut(),
         }
+    }
+}
+
+impl<T: Clone> Clone for List<T> {
+    fn clone(&self) -> Self {
+        self.iter().cloned().collect()
+    }
+}
+
+impl<T: Debug> Debug for List<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.iter()).finish()
     }
 }
 
