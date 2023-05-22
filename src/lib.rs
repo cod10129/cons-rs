@@ -402,6 +402,7 @@ impl<T> FusedIterator for IntoIter<T> {}
 #[cfg(test)]
 mod tests {
     use super::List;
+    use alloc::format;
 
     #[test]
     fn push_and_pop() {
@@ -495,6 +496,24 @@ mod tests {
         list.push(1);
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
+    }
+
+    #[test]
+    fn debug_fmt() {
+        let mut list = List::new();
+        assert_eq!(
+            "[]",
+            format!("{:?}", list)
+        );
+
+        list.push(1);
+        list.push(2);
+        list.push(-3);
+
+        assert_eq!(
+            "[-3, 2, 1]",
+            format!("{:?}", list)
+        );
     }
 
     #[test]
