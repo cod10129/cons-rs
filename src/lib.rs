@@ -323,15 +323,12 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len: usize = self.next.map_or(0, |node| {
-            let mut l = 0;
-            let mut current = Some(node);
-            while let Some(node) = current {
-                current = node.next.as_deref();
-                l += 1;
-            }
-            l
-        });
+        let mut len = 0;
+        let mut current = self.next;
+        while let Some(node) = current {
+            current = node.next.as_deref();
+            len += 1;
+        }
         (len, Some(len))
     }
 }
