@@ -278,31 +278,27 @@ impl<T> Extend<T> for List<T> {
     }
 }
 
-impl<T> IntoIterator for List<T> {
-    type Item = T;
-    type IntoIter = IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter(self)
+macro_rules! into_iter_impl {
+    ($item: ty, $iter: ty, $func: path) => {
+        type Item = $item;
+        type IntoIter = $iter;
+        
+        fn into_iter(self) -> Self::IntoIter {
+            $func(self)
+        }
     }
+}
+
+impl<T> IntoIterator for List<T> {
+    into_iter_impl!{T, IntoIter<T>, IntoIter}
 }
 
 impl<'a, T> IntoIterator for &'a List<T> {
-    type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
+    into_iter_impl!{&'a T, Iter<'a, T>, List::iter}
 }
 
 impl<'a, T> IntoIterator for &'a mut List<T> {
-    type Item = &'a mut T;
-    type IntoIter = IterMut<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter_mut()
-    }
+    into_iter_impl!{&'a mut T, IterMut<'a, T>, List::iter_mut}
 }
 
 /// An [iterator](Iterator) that yields shared references
@@ -517,16 +513,35 @@ mod tests {
     }
 
     #[test]
-    fn into_iter() {
+    fn into_iters() {
         let mut list = List::new();
 
         list.push(1);
         list.push(2);
 
-        let mut iter = list.into_iter();
-        assert_eq!(iter.next(), Some(2));
-        assert_eq!(iter.next(), Some(1));
-        assert_eq!(iter.next(), None);
+        let mut expected_val = 2;
+        
+        for elem in list {
+            assert_eq!(elem, expected_val);
+            expected_val -= 1;
+        }
+        expected_val = 2;
+
+        let mut list = List::new();
+
+        list.push(1);
+        list.push(2);
+        
+        for elem in &list {
+            assert_eq!(elem, &expected_val);
+            expected_val -= 1;
+        }
+        expected_val = 2;
+
+        for elem in &mut list {
+            assert_eq!(elem, &mut expected_val);
+            expected_val -= 1;
+        }
     }
 
     #[test]
