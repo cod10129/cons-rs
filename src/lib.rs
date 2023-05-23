@@ -26,6 +26,7 @@ use alloc::boxed::Box;
 use core::iter::FusedIterator;
 use core::fmt::{self, Debug};
 
+#[cfg(any(feature = "immutable", doc))]
 pub mod immutable;
 
 /// A singly linked list.
@@ -272,7 +273,12 @@ impl<T> FromIterator<T> for List<T> {
 
 impl<T> Extend<T> for List<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        for elem in iter {
+        use alloc::collections::VecDeque;
+        
+        let mut queue = VecDeque::new();
+        queue.extend(iter);
+        
+        while let Some(elem) = queue.pop_back() {
             self.push(elem);
         }
     }
@@ -495,6 +501,20 @@ mod tests {
     }
 
     #[test]
+    fn clone() {
+        let mut list = List::new();
+        
+        list.push(1);
+        list.push(2);
+
+        let mut new_list = list.clone();
+        
+        assert_eq!(list.pop(), new_list.pop());
+        assert_eq!(list.pop(), new_list.pop());
+        assert_eq!(list.pop(), new_list.pop());
+    }
+
+    #[test]
     fn debug_fmt() {
         let mut list = List::new();
         assert_eq!(
@@ -521,16 +541,11 @@ mod tests {
 
         let mut expected_val = 2;
         
-        for elem in list {
+        for elem in list.clone() {
             assert_eq!(elem, expected_val);
             expected_val -= 1;
         }
         expected_val = 2;
-
-        let mut list = List::new();
-
-        list.push(1);
-        list.push(2);
         
         for elem in &list {
             assert_eq!(elem, &expected_val);
@@ -556,6 +571,17 @@ mod tests {
             assert_eq!(elem, i);
             i -= 1;
         }
+    }
+
+    #[test]
+    fn extend() {
+        let mut list = List::new();
+
+        list.extend([1, 2]);
+
+        assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), Some(2));
+        assert_eq!(list.pop(), None);
     }
 
     #[test]
@@ -595,12 +621,11 @@ mod tests {
 
     #[test]
     fn from_iter() {
-        let vec = alloc::vec![1, 2, 3];
-        let mut list: List<_> = vec.into_iter().collect();
+        let mut list: List<_> = [1, 2, 3].into_iter().collect();
 
-        assert_eq!(list.pop(), Some(3));
-        assert_eq!(list.pop(), Some(2));
         assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), Some(2));
+        assert_eq!(list.pop(), Some(3));
         assert_eq!(list.pop(), None);
     }
 }

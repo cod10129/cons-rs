@@ -1,6 +1,6 @@
 [package]
 name = "cons-rs"
-version = "0.6.8"
+version = "0.7.0"
 edition = "2021"
 description = "A crate containing a Cons data structure."
 include = [
@@ -14,5 +14,8 @@ license = "MIT"
 categories = ["data-structures", "no-std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+immutable = []
 
 [dependencies]
