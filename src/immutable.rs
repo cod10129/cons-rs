@@ -176,6 +176,8 @@ impl<T> Drop for List<T> {
     }
 }
 
+into_iter_impl!{ref, Iter<'a, T>, List::iter}
+
 /// An [iterator](Iterator) that yields references
 /// to all the elements in a list.
 pub struct Iter<'a, T> {
@@ -246,6 +248,17 @@ mod tests {
 
         let mut iter = list.iter();
         
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn into_iter() {
+        let list = List::new().prepend(1).prepend(2);
+
+        let mut iter = list.into_iter();
+
         assert_eq!(iter.next(), Some(&2));
         assert_eq!(iter.next(), Some(&1));
         assert_eq!(iter.next(), None);

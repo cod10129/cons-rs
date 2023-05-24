@@ -1,6 +1,6 @@
 [package]
 name = "cons-rs"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 description = "A crate containing a Cons data structure."
 include = [
@@ -19,3 +19,6 @@ categories = ["data-structures", "no-std"]
 immutable = []
 
 [dependencies]
+
+[package.metadata.docs.rs]
+all-features = true

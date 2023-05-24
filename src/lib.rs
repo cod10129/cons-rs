@@ -26,7 +26,27 @@ use alloc::boxed::Box;
 use core::iter::FusedIterator;
 use core::fmt::{self, Debug};
 
-#[cfg(any(feature = "immutable", doc))]
+// Needs to be up here so it can be imported into immutable module.
+macro_rules! into_iter_impl {
+    ($type: ty, $item: ty, $iter: ty, $func: path) => {
+        impl<'a, T> IntoIterator for $type {
+            type Item = $item;
+            type IntoIter = $iter;
+
+            fn into_iter(self) -> Self::IntoIter {
+                $func(self)
+            }
+        }
+    };
+    (ref, $iter: ty, $func: path) => {
+        into_iter_impl!{&'a List<T>, &'a T, $iter, $func}
+    };
+    (ref mut, $iter: ty, $func: path) => {
+        into_iter_impl!{&'a mut List<T>, &'a mut T, $iter, $func}
+    }
+}
+
+#[cfg(feature = "immutable")]
 pub mod immutable;
 
 /// A singly linked list.
@@ -284,25 +304,9 @@ impl<T> Extend<T> for List<T> {
     }
 }
 
-macro_rules! into_iter_impl {
-    ($lifetime: lifetime, $type: ty, $item: ty, $iter: ty, $func: path) => {
-        impl<$lifetime, T> IntoIterator for $type {
-            type Item = $item;
-            type IntoIter = $iter;
-
-            fn into_iter(self) -> Self::IntoIter {
-                $func(self)
-            }
-        }
-    };
-    ($type: ty, $item: ty, $iter: ty, $func: path) => {
-        into_iter_impl!{'unused, $type, $item, $iter, $func}
-    }
-}
-
 into_iter_impl!{List<T>, T, IntoIter<T>, IntoIter}
-into_iter_impl!{'a, &'a List<T>, &'a T, Iter<'a, T>, List::iter}
-into_iter_impl!{'a, &'a mut List<T>, &'a mut T, IterMut<'a, T>, List::iter_mut}
+into_iter_impl!{ref, Iter<'a, T>, List::iter}
+into_iter_impl!{ref mut, IterMut<'a, T>, List::iter_mut}
 
 /// An [iterator](Iterator) that yields shared references
 /// to all the elements in a `List`.
