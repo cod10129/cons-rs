@@ -283,6 +283,25 @@ impl<T> Drop for List<T> {
     }
 }
 
+impl<T, const N: usize> From<[T; N]> for List<T> {
+    /// Converts from `[T; N]` to `List<T>`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    ///
+    /// let mut list = List::new();
+    /// list.push(1);
+    /// list.push(2);
+    ///
+    /// assert_eq!(list, List::from([1, 2]));
+    /// ```
+    fn from(arr: [T; N]) -> Self {
+        Self::from_iter(arr)
+    }
+}
+
 impl<T> FromIterator<T> for List<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut list = List::new();
