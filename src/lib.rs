@@ -279,6 +279,8 @@ impl<T: PartialEq> PartialEq for List<T> {
     }
 }
 
+impl<T: Eq> Eq for List<T> {}
+
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
         let mut current = self.head.take();
