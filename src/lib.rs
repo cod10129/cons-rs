@@ -16,7 +16,7 @@
     clippy::std_instead_of_core
 )]
 #![allow(
-    clippy::must_use_candidate, 
+    //clippy::must_use_candidate, 
     clippy::return_self_not_must_use
 )]
 
@@ -73,6 +73,7 @@ impl<T> List<T> {
     /// let list: List<i32> = List::new();
     /// ```
     #[inline]
+    #[must_use]
     pub const fn new() -> Self {
         List { head: None }
     }
@@ -338,6 +339,7 @@ into_iter_impl!{ref mut, IterMut<'a, T>, List::iter_mut}
 /// to all the elements in a `List`.
 ///
 /// For mutable references, see [`IterMut`].
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>,
 }
@@ -375,6 +377,7 @@ impl<'a, T> FusedIterator for Iter<'a, T> {}
 /// to all the elements in a `List`.
 ///
 /// For shared references, see [`Iter`].
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct IterMut<'a, T> {
     next: Option<&'a mut Node<T>>,
 }

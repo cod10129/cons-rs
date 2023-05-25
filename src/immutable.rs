@@ -30,6 +30,7 @@ impl<T> List<T> {
     /// let list: List<i32> = List::new();
     /// ```
     #[inline]
+    #[must_use]
     pub const fn new() -> List<T> {
         List { head: None }
     }
@@ -180,6 +181,7 @@ into_iter_impl!{ref, Iter<'a, T>, List::iter}
 
 /// An [iterator](Iterator) that yields references
 /// to all the elements in a list.
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iter<'a, T> {
     next: Option<&'a Node<T>>
 }

@@ -1,5 +1,7 @@
 # cons-rs
 
+[![dependency status](https://deps.rs/crate/cons-rs/0.7.3/status.svg)](https://deps.rs/crate/cons-rs/0.7.3)
+
 A crate containing a singly-linked list.
 
 As of 0.4.1, cons-rs supports `#[no_std]` environments.
