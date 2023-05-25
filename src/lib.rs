@@ -47,7 +47,6 @@ macro_rules! into_iter_impl {
 }
 
 #[cfg(feature = "immutable")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "immutable")))]
 pub mod immutable;
 
 /// A singly linked list.
