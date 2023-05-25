@@ -142,6 +142,28 @@ impl<T> List<T> {
         self.head.is_none()
     }
 
+    /// Removes all elements from the `List`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cons_rs::List;
+    ///
+    /// let mut list = List::new();
+    /// list.push(1);
+    /// list.push(2);
+    /// list.clear();
+    /// 
+    /// assert!(list.is_empty());
+    /// ```
+    pub fn clear(&mut self) {
+        let mut current = self.head.take();
+
+        while let Some(mut node) = current {
+            current = node.next.take();
+        }
+    }
+    
     /// Returns the length of the `List`.
     ///
     /// # Examples
@@ -283,11 +305,7 @@ impl<T: Eq> Eq for List<T> {}
 
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
-        let mut current = self.head.take();
-
-        while let Some(mut node) = current {
-            current = node.next.take();
-        }
+        self.clear();
     }
 }
 
