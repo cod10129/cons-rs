@@ -16,7 +16,7 @@
     clippy::std_instead_of_core
 )]
 #![allow(
-    //clippy::must_use_candidate, 
+    clippy::must_use_candidate, 
     clippy::return_self_not_must_use
 )]
 
