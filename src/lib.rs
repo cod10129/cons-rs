@@ -6,18 +6,14 @@
 //!
 //! [`LinkedList`]: alloc::collections::LinkedList
 #![no_std]
-#![warn(missing_docs)]
 #![forbid(unsafe_code)]
-
-// clippy settings
 #![warn(
-    clippy::alloc_instead_of_core, 
-    clippy::std_instead_of_alloc, 
-    clippy::std_instead_of_core
+    missing_docs,
+    clippy::alloc_instead_of_core,
 )]
 #![allow(
     clippy::must_use_candidate, 
-    clippy::return_self_not_must_use
+    clippy::return_self_not_must_use,
 )]
 
 extern crate alloc;
